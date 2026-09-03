@@ -1,0 +1,16 @@
+{
+  "artboards": [
+    { "file": "BootLoader.dc.html", "x": 0, "y": 0, "w": 1440, "h": 900 },
+    { "file": "Main.dc.html", "x": 1520, "y": 0, "w": 1440, "h": 900 },
+    { "file": "GraphHive.dc.html", "x": 3040, "y": 0, "w": 1440, "h": 900 },
+    { "file": "Projects.dc.html", "x": 4560, "y": 0, "w": 1440, "h": 900 }
+  ],
+  "annotations": [
+    { "id": "storyboard-title", "x": 0, "y": -150, "w": 700, "text": "SCROLL-CAMERA STORYBOARD — read left to right: boot sequence, then one continuous scroll drives a virtual camera across the other three states." },
+    { "id": "hero-note", "x": 1520, "y": -150, "w": 460, "text": "State 1: camera locked in tight (1.0x) on the HERO node — this is exactly where a normal site would start." },
+    { "id": "graphhive-note", "x": 3040, "y": -260, "w": 500, "text": "State 2 (mid-scroll): the camera pulls back and reveals the whole site as a connected node graph. This is the 'graph hive' — scroll position maps directly to camera zoom/pan, not to a page position." },
+    { "id": "graphhive-mechanic", "x": 3040, "y": 980, "w": 500, "text": "Mechanic: GSAP ScrollTrigger scrubs a single transform (translateX/Y + scale) on the whole canvas. Nodes and edges are real SVG/DOM, so this state is never a photo — it's live layout." },
+    { "id": "projects-note", "x": 4560, "y": -150, "w": 460, "text": "State 3: camera pushes back in (1.0x) onto the PROJECTS node. Continuing to scroll would pull back out to the hive and push into the next node (Skills, About, Education)." }
+  ],
+  "launch": { "view": "canvas" }
+}

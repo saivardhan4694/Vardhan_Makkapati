@@ -1,0 +1,71 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'JetBrains Mono', ui-monospace, monospace; background: #0a0a0b; }
+    a { color: oklch(78% 0.16 150); } a:hover { color: oklch(85% 0.14 150); }
+    @keyframes blink { 0%, 45% { opacity: 1; } 50%, 100% { opacity: 0; } }
+    @keyframes flicker { 0%, 96%, 100% { opacity: 0.4; } 97% { opacity: 0.25; } 98% { opacity: 0.45; } }
+    .cursor { animation: blink 1.1s steps(1) infinite; }
+    .scan { animation: flicker 6s linear infinite; }
+  </style>
+</helmet>
+
+<div style="position:relative; width:1440px; height:900px; background:#0a0a0b; overflow:hidden; color:#f5f5f2;">
+
+  <!-- scanline overlay -->
+  <div class="scan" style="position:absolute; inset:0; pointer-events:none; opacity:0.4; background:repeating-linear-gradient(rgba(255,255,255,0.035) 0px, rgba(255,255,255,0.035) 1px, transparent 1px, transparent 3px);"></div>
+  <div style="position:absolute; inset:0; pointer-events:none; box-shadow: inset 0 0 180px rgba(0,0,0,0.85);"></div>
+
+  <!-- terminal window chrome -->
+  <div style="position:absolute; left:120px; top:90px; width:1200px; height:720px; border:1px solid #2a2a2e; background:#0d0d0e;">
+    <div style="display:flex; align-items:center; gap:10px; padding:14px 20px; border-bottom:1px solid #2a2a2e;">
+      <div style="display:flex; gap:6px;">
+        <div style="width:8px; height:8px; border:1px solid #55555a;"></div>
+        <div style="width:8px; height:8px; border:1px solid #55555a;"></div>
+        <div style="width:8px; height:8px; border:1px solid #55555a;"></div>
+      </div>
+      <div style="margin-left:12px; font-size:12px; letter-spacing:0.06em; color:#8a8a8f;">root@portfolio_os — boot</div>
+    </div>
+
+    <div style="padding:40px 48px;">
+      <div style="font-size:13px; letter-spacing:0.08em; color:#8a8a8f;">PORTFOLIO_OS v1.0</div>
+      <div style="margin-top:4px; font-size:13px; letter-spacing:0.02em; color:#55555a;">BOOT SEQUENCE INITIATED — 2026.09.02 14:02:41</div>
+
+      <div style="margin-top:36px; display:flex; flex-direction:column; gap:11px; font-size:14px; letter-spacing:0.02em;">
+        <div style="display:flex; gap:16px;"><span style="color:oklch(78% 0.16 150);">[OK]</span><span>KERNEL ................................ LOADED</span></div>
+        <div style="display:flex; gap:16px;"><span style="color:oklch(78% 0.16 150);">[OK]</span><span>NEURAL_MODULES ......................... LOADED</span></div>
+        <div style="display:flex; gap:16px;"><span style="color:oklch(78% 0.16 150);">[OK]</span><span>MEM/PROJECTS ........................... MOUNTED</span></div>
+        <div style="display:flex; gap:16px;"><span style="color:oklch(78% 0.16 150);">[OK]</span><span>MEM/EXPERIENCE ......................... MOUNTED</span></div>
+        <div style="display:flex; gap:16px;"><span style="color:oklch(78% 0.16 150);">[OK]</span><span>GPU_ALLOCATION .......................... VERIFIED</span></div>
+        <div style="display:flex; gap:16px;"><span style="color:oklch(78% 0.16 150);">[OK]</span><span>SECURE_SHELL ............................ ESTABLISHED</span></div>
+        <div style="display:flex; gap:16px;"><span style="color:oklch(78% 0.16 150);">[OK]</span><span>RENDER_PIPELINE ......................... READY</span></div>
+      </div>
+
+      <div style="margin-top:40px; font-size:13px; color:#8a8a8f; letter-spacing:0.04em;">PROGRESS</div>
+      <div style="margin-top:10px; font-size:14px; letter-spacing:0px; color:#f5f5f2;">[████████████████████████████████████████████] 100%</div>
+
+      <div style="margin-top:40px; font-size:14px; color:#f5f5f2;">SYSTEM_READY. LAUNCHING INTERFACE<span class="cursor">_</span></div>
+
+      <div style="margin-top:56px; display:flex; align-items:baseline; gap:10px; font-size:14px;">
+        <span style="color:oklch(78% 0.16 150);">&gt;</span>
+        <span class="cursor" style="display:inline-block; width:10px; height:16px; background:#f5f5f2;"></span>
+      </div>
+    </div>
+  </div>
+
+  <div style="position:absolute; left:120px; top:820px; font-size:11px; letter-spacing:0.08em; color:#55555a;">NO INTERACTION REQUIRED — SEQUENCE AUTO-ADVANCES ON COMPLETE</div>
+  <div style="position:absolute; right:120px; top:820px; font-size:11px; letter-spacing:0.08em; color:#55555a;">STATE: 01 / 04 — BOOT</div>
+
+</div>
+</x-dc>
+</body>
+</html>

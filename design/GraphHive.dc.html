@@ -1,0 +1,93 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'JetBrains Mono', ui-monospace, monospace; background: #0a0a0b; }
+    a { color: oklch(78% 0.16 150); } a:hover { color: oklch(85% 0.14 150); }
+    .node { border:1px solid #3a3a3e; background:#101012; }
+  </style>
+</helmet>
+
+<div style="position:relative; width:1440px; height:900px; background:#0a0a0b; overflow:hidden; color:#f5f5f2;">
+
+  <div style="position:absolute; inset:0; pointer-events:none; opacity:0.25; background:repeating-linear-gradient(rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 3px);"></div>
+
+  <!-- faint dot grid to read as "zoomed out" canvas -->
+  <div style="position:absolute; inset:0; opacity:0.5; background-image: radial-gradient(#232326 1px, transparent 1px); background-size: 36px 36px;"></div>
+
+  <!-- state readout -->
+  <div style="position:absolute; top:28px; left:32px; font-size:11px; letter-spacing:0.06em; color:#55555a;">
+    <div>CAMERA: ZOOM_OUT [0.35x] — INTERPOLATING</div>
+    <div style="margin-top:3px;">VIEW: NETWORK_OVERVIEW</div>
+  </div>
+  <div style="position:absolute; top:28px; right:32px; text-align:right; font-size:11px; letter-spacing:0.06em; color:#55555a;">
+    <div>NODES: 05 &nbsp; EDGES: 04</div>
+    <div style="margin-top:3px;">SCROLL_PROGRESS: 42%</div>
+  </div>
+
+  <!-- connective lines (SVG) -->
+  <svg width="1440" height="900" style="position:absolute; inset:0;">
+    <line x1="720" y1="450" x2="360" y2="220" stroke="#3a3a3e" stroke-width="1"/>
+    <line x1="720" y1="450" x2="1080" y2="220" stroke="#3a3a3e" stroke-width="1"/>
+    <line x1="720" y1="450" x2="1080" y2="680" stroke="#3a3a3e" stroke-width="1"/>
+    <line x1="720" y1="450" x2="360" y2="680" stroke="#3a3a3e" stroke-width="1"/>
+    <circle cx="540" cy="335" r="2" fill="#55555a"/>
+    <circle cx="900" cy="335" r="2" fill="#55555a"/>
+    <circle cx="900" cy="565" r="2" fill="#55555a"/>
+    <circle cx="540" cy="565" r="2" fill="#55555a"/>
+  </svg>
+
+  <!-- HERO hub node -->
+  <div class="node" style="position:absolute; left:620px; top:400px; width:200px; padding:18px; text-align:center;">
+    <div style="font-size:10px; letter-spacing:0.1em; color:oklch(78% 0.16 150);">● ACTIVE_NODE</div>
+    <div style="margin-top:8px; font-size:15px; font-weight:700; letter-spacing:0.04em;">HERO</div>
+    <div style="margin-top:4px; font-size:10px; color:#55555a;">ENTRY_POINT</div>
+  </div>
+
+  <!-- ABOUT node -->
+  <div class="node" style="position:absolute; left:260px; top:170px; width:180px; padding:16px; text-align:center;">
+    <div style="font-size:10px; letter-spacing:0.1em; color:#55555a;">○ NODE_02</div>
+    <div style="margin-top:8px; font-size:14px; font-weight:700; letter-spacing:0.04em;">ABOUT</div>
+    <div style="margin-top:4px; font-size:10px; color:#55555a;">PROFILE.SYS</div>
+  </div>
+
+  <!-- SKILLS node -->
+  <div class="node" style="position:absolute; left:980px; top:170px; width:180px; padding:16px; text-align:center;">
+    <div style="font-size:10px; letter-spacing:0.1em; color:#55555a;">○ NODE_03</div>
+    <div style="margin-top:8px; font-size:14px; font-weight:700; letter-spacing:0.04em;">SKILLS</div>
+    <div style="margin-top:4px; font-size:10px; color:#55555a;">STACK.JSON</div>
+  </div>
+
+  <!-- PROJECTS node (next target, slightly emphasized) -->
+  <div class="node" style="position:absolute; left:980px; top:630px; width:180px; padding:16px; text-align:center; border-color:#6a6a6e;">
+    <div style="font-size:10px; letter-spacing:0.1em; color:#8a8a8f;">◐ NODE_04 — NEXT</div>
+    <div style="margin-top:8px; font-size:14px; font-weight:700; letter-spacing:0.04em;">PROJECTS</div>
+    <div style="margin-top:4px; font-size:10px; color:#55555a;">REPO[ ]:04</div>
+  </div>
+
+  <!-- EDUCATION node -->
+  <div class="node" style="position:absolute; left:260px; top:630px; width:180px; padding:16px; text-align:center;">
+    <div style="font-size:10px; letter-spacing:0.1em; color:#55555a;">○ NODE_05</div>
+    <div style="margin-top:8px; font-size:14px; font-weight:700; letter-spacing:0.04em;">EDUCATION</div>
+    <div style="margin-top:4px; font-size:10px; color:#55555a;">LOG.ACADEMIC</div>
+  </div>
+
+  <!-- footer -->
+  <div style="position:absolute; left:0; right:0; bottom:0; height:34px; display:flex; align-items:center; justify-content:space-between; padding:0 32px; border-top:1px solid #2a2a2e; font-size:11px; letter-spacing:0.05em; color:#55555a;">
+    <div>TRANSITION: HERO → PROJECTS</div>
+    <div>EASING: cubic-bezier(0.65, 0, 0.35, 1)</div>
+    <div>SYS_CLOCK: 14:02:58</div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>
