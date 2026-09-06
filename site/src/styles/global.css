@@ -348,6 +348,11 @@ body {
   background: linear-gradient(0deg, rgba(17, 20, 26, 0.97), rgba(17, 20, 26, 0.9));
 }
 
+.chrome-footer-right {
+  display: flex;
+  gap: 24px;
+}
+
 /* ---------------------------------------------------------------- */
 /* Graph layer                                                       */
 /* ---------------------------------------------------------------- */
@@ -478,9 +483,17 @@ body {
 /* Hero */
 
 .panel--hero {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  column-gap: 56px;
+  align-items: center;
+}
+
+.hero-main {
+  min-width: 0;
+  /* Above the full-bleed network canvas behind the panel. */
+  position: relative;
+  z-index: 1;
 }
 
 .hero-kicker {
@@ -491,10 +504,48 @@ body {
 
 .hero-title {
   margin: 22px 0 0;
+  line-height: 1;
+}
+
+/* Reads as the first half of the name rather than a label above it, but stays
+   clearly secondary to the surname on all three axes: size, weight and
+   brightness. */
+.hero-title-first {
+  display: block;
+  font-size: 44px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: rgba(233, 232, 223, 0.8);
+  margin-bottom: 6px;
+}
+
+.hero-title-last {
+  display: block;
   font-size: 76px;
   font-weight: 800;
   line-height: 1.02;
   letter-spacing: -0.01em;
+}
+
+.hero-role {
+  margin-top: 18px;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--accent);
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 500ms ease, transform 500ms ease;
+}
+
+.hero-role--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.hero-role-sep {
+  color: var(--text-dimmer);
+  font-weight: 400;
 }
 
 .hero-sub {
@@ -505,21 +556,96 @@ body {
   color: var(--text-dim);
 }
 
-.hero-stat {
-  position: absolute;
-  top: 180px;
-  right: 88px;
-  text-align: right;
-  font-size: 11px;
-  letter-spacing: 0.08em;
+@keyframes hero-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.7);
+  }
+}
+
+/* Accent status strip. These are the green markers that used to live in the
+   hero's right-hand column — the live pulse, the company name and the skill
+   separators. The column became the network, so they moved here rather than
+   leaving the landing screen with almost no accent on it. */
+
+.hero-status {
+  margin-top: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.hero-status-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+}
+
+.hero-pulse {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(199, 255, 47, 0.7);
+  animation: hero-pulse 2.2s ease-in-out infinite;
+}
+
+.hero-status-key {
+  font-size: 10px;
+  letter-spacing: 0.12em;
   color: var(--text-dimmer);
 }
 
-.hero-stat-value {
-  margin-top: 6px;
-  font-size: 34px;
-  font-weight: 700;
+.hero-status-val {
+  color: var(--text-dim);
+}
+
+.hero-status-skills {
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+
+.hero-status-sep {
   color: var(--accent);
+  opacity: 0.75;
+  margin: 0 8px;
+}
+
+/* Hero — 3D neural network viewport */
+
+/* Spans the whole panel rather than sitting in the grid's right-hand cell:
+   a canvas the size of that cell puts a hard rectangular edge right beside
+   the name, which reads as a box no matter what is drawn inside it. The
+   network is placed toward the right in canvas space and its edges are
+   erased in the draw loop, so it dissolves into the panel on every side.
+   The empty second grid column still sizes the text column as before. */
+.netviz {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.netviz-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  /* Own compositor layer. Without this the canvas repaints as part of the
+     camera rig's 3D-transformed layer every frame, which measured a ~15fps
+     drop on the hero even though the draw call itself costs ~0.5ms. */
+  will-change: transform;
+  transform: translateZ(0);
+  contain: paint;
 }
 
 .hero-hint {
@@ -546,40 +672,207 @@ body {
   justify-content: center;
 }
 
-.about-grid {
-  margin-top: 40px;
-  display: grid;
-  grid-template-columns: 1.4fr 1fr;
-  gap: 48px;
-  align-items: start;
-}
+/* Shared box primitive — every section below is built from this. The frame is
+   hollow with dim edges; only the four corners are lit in accent green, drawn
+   as eight 1px gradient segments (two per corner) over the border box. */
 
-.about-copy {
-  font-size: 15px;
-  line-height: 1.8;
-  color: var(--text-dim);
-  max-width: 560px;
-}
-
-.about-meta {
+.box {
+  position: relative;
   border: 1px solid var(--border);
-  background: var(--bg-alt);
-  padding: 20px 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  font-size: 12px;
+  background-color: rgba(22, 26, 34, 0.4);
+  padding: 12px 16px;
 }
 
-.about-meta-row {
+/* Green corner brackets on a hollow frame. */
+
+.box {
+  background-image: linear-gradient(var(--accent), var(--accent)),
+    linear-gradient(var(--accent), var(--accent)), linear-gradient(var(--accent), var(--accent)),
+    linear-gradient(var(--accent), var(--accent)), linear-gradient(var(--accent), var(--accent)),
+    linear-gradient(var(--accent), var(--accent)), linear-gradient(var(--accent), var(--accent)),
+    linear-gradient(var(--accent), var(--accent));
+  background-size: 13px 1px, 1px 13px, 13px 1px, 1px 13px, 13px 1px, 1px 13px, 13px 1px, 1px 13px;
+  background-position: left top, left top, right top, right top, left bottom, left bottom,
+    right bottom, right bottom;
+  background-repeat: no-repeat;
+  /* padding-box, not border-box: a border-box origin puts the 1px segments
+     directly under the 1px border, which paints over them and hides the
+     corners entirely. */
+  background-origin: padding-box;
+}
+
+.box-grid {
+  margin-top: 6px;
+  display: grid;
+  gap: 16px;
+}
+
+.box-grid--4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.box-num {
+  font-size: 11px;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.box-title {
+  margin-top: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.box-body {
+  margin-top: 5px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
+/* Section scaffolding */
+
+.about-section {
+  margin-top: 8px;
+}
+
+.about-section-head {
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  color: var(--text-dim);
+}
+
+.about-section-head::first-letter {
+  color: var(--accent);
+}
+
+/* Top status bar */
+
+.box--status-bar {
+  margin-top: 8px;
   display: flex;
   justify-content: space-between;
   gap: 24px;
+}
+
+.status-bar-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.status-bar-key {
+  font-size: 10px;
+  letter-spacing: 0.08em;
   color: var(--text-dimmer);
 }
 
-.about-meta-val {
+.status-bar-val {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   color: var(--text);
+}
+
+/* Why AI */
+
+.box--why {
+  margin-top: 6px;
+}
+
+.box--why p {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--text-dim);
+}
+
+.why-emph {
+  margin-top: 8px !important;
+  color: var(--text) !important;
+  font-weight: 700;
+}
+
+/* How I build + User preferences share a row to save vertical space */
+
+.combo-grid {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 28px;
+  align-items: stretch;
+}
+
+.combo-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.combo-col .box {
+  flex: 1;
+}
+
+.box--build {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.build-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.build-step-label {
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  padding: 6px 11px;
+  font-size: 10.5px;
+  letter-spacing: 0.05em;
+  color: var(--text);
+}
+
+.build-step-arrow {
+  color: var(--accent);
+  font-size: 12px;
+}
+
+/* Bottom status line */
+
+.box--status-line {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--text-dimmer);
+}
+
+.status-line-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.status-line-dots {
+  width: 40px;
+  border-bottom: 1px dotted var(--border-strong);
+}
+
+.status-line-led {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(199, 255, 47, 0.7);
+  animation: hero-pulse 2.2s ease-in-out infinite;
 }
 
 /* Skills */
@@ -619,8 +912,40 @@ body {
 
 .skill-bar-fill {
   height: 100%;
+  width: 0%;
   background: var(--accent);
   box-shadow: 0 0 8px rgba(199, 255, 47, 0.45);
+  transition: width 900ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.stack-json-wrap {
+  position: relative;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+  border: 1px solid var(--border-strong);
+  background: var(--bg);
+  color: var(--text-dim);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: color 200ms ease, border-color 200ms ease;
+}
+
+.copy-btn:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.copy-btn--copied {
+  color: var(--accent);
+  border-color: var(--accent);
 }
 
 .stack-json {
@@ -655,6 +980,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  transition: transform 150ms ease;
+  will-change: transform;
 }
 
 .card--wide {

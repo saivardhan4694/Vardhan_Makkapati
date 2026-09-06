@@ -20,7 +20,7 @@ import { memo } from "react";
 function Education() {
   return (
     <div className="panel panel--education">
-      <div className="panel-kicker">&gt; EDUCATION — LOG.ACADEMIC</div>
+      <div className="panel-kicker">&gt; TRAINING — LOG.ACADEMIC</div>
       <h2 className="panel-title">ACADEMIC_LOG</h2>
       <div className="edu-list">
         {LOG.map((row) => (

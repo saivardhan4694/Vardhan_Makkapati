@@ -35,6 +35,15 @@ const SCROLL_SCRUB = 0.4;
 const JUMP_SECONDS_PER_SEGMENT = 0.4;
 const JUMP_MIN_SECONDS = 1.35;
 
+// Cap how far the camera scales up on wide viewports. Content inside each
+// panel uses pixel offsets authored for the 1440px reference frame; those
+// offsets scale right along with everything else, so on a much wider screen
+// (1920px+, common) elements positioned near a panel edge (e.g. the hero's
+// scroll hint) get amplified enough to collide with the fixed nav/footer
+// chrome, which never scales. Capping the scale keeps that math sane —
+// panels are letterboxed slightly on very wide screens instead.
+const MAX_BASE_SCALE = 1.2;
+
 export default function Scene() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const rigRef = useRef<HTMLDivElement>(null);
@@ -45,6 +54,7 @@ export default function Scene() {
   const coordRef = useRef<HTMLDivElement>(null);
   const camReadoutRef = useRef<HTMLDivElement>(null);
   const scrollPctRef = useRef<HTMLDivElement>(null);
+  const uptimeRef = useRef<HTMLDivElement>(null);
 
   const [activeIndex, setActiveIndex] = useState(0);
   const activeIndexRef = useRef(0);
@@ -107,7 +117,7 @@ export default function Scene() {
     const section = sectionRef.current;
     if (!world || !section) return;
 
-    let baseScale = window.innerWidth / NODE_W;
+    let baseScale = Math.min(window.innerWidth / NODE_W, MAX_BASE_SCALE);
 
     // Runs on every animation frame, so it writes styles directly rather than
     // through gsap.set (each of those allocates a zero-duration tween).
@@ -196,7 +206,7 @@ export default function Scene() {
     applyCamera(0);
 
     const onResize = () => {
-      baseScale = window.innerWidth / NODE_W;
+      baseScale = Math.min(window.innerWidth / NODE_W, MAX_BASE_SCALE);
       applyCamera(renderProgressRef.current);
       ScrollTrigger.refresh();
     };
@@ -212,9 +222,16 @@ export default function Scene() {
   }, []);
 
   useEffect(() => {
+    const bootTime = Date.now();
     const tick = () => {
       if (clockRef.current) {
         clockRef.current.textContent = `SYS_CLOCK: ${new Date().toLocaleTimeString("en-US", { hour12: false })}`;
+      }
+      if (uptimeRef.current) {
+        const elapsed = Math.floor((Date.now() - bootTime) / 1000);
+        const mm = String(Math.floor(elapsed / 60)).padStart(2, "0");
+        const ss = String(elapsed % 60).padStart(2, "0");
+        uptimeRef.current.textContent = `UPTIME: ${mm}:${ss}`;
       }
     };
     tick();
@@ -295,7 +312,10 @@ export default function Scene() {
           <div className="chrome-footer-status">
             STATUS: <span className="accent">OPTIMAL</span>
           </div>
-          <div ref={clockRef}>SYS_CLOCK: —</div>
+          <div className="chrome-footer-right">
+            <div ref={uptimeRef}>UPTIME: 00:00</div>
+            <div ref={clockRef}>SYS_CLOCK: —</div>
+          </div>
         </footer>
       </div>
     </section>

@@ -1,15 +1,21 @@
 import { memo } from "react";
+import { useTilt } from "../../hooks/useTilt";
 
 function Projects() {
+  const wideTilt = useTilt<HTMLDivElement>(4);
+  const latencyTilt = useTilt<HTMLDivElement>(6);
+  const ganTilt = useTilt<HTMLDivElement>(4);
+  const dockerTilt = useTilt<HTMLDivElement>(4);
+
   return (
     <div className="panel panel--projects">
       <div className="panel-kicker-row">
-        <div className="panel-kicker">&gt; PROJECTS</div>
+        <div className="panel-kicker">&gt; BUILDS — REPO[]</div>
         <div className="panel-kicker-dim">COUNT: 04</div>
       </div>
 
       <div className="projects-grid">
-        <div className="card card--wide">
+        <div className="card card--wide" ref={wideTilt}>
           <div className="card-top">
             <div>
               <div className="card-title">Neural Redactor</div>
@@ -32,7 +38,7 @@ function Projects() {
           </p>
         </div>
 
-        <div className="card">
+        <div className="card" ref={latencyTilt}>
           <div className="card-index">[ 02 ]</div>
           <div className="card-title card-title--sm">LATENCY_CORE_V3</div>
           <p className="card-desc">
@@ -44,7 +50,7 @@ function Projects() {
           </div>
         </div>
 
-        <div className="card card--row">
+        <div className="card card--row" ref={ganTilt}>
           <div>
             <div className="card-title card-title--sm">GAN_SYNTH_24</div>
             <p className="card-desc">
@@ -54,7 +60,7 @@ function Projects() {
           <div className="card-media card-media--sm">BINARY_STREAM_RENDER…</div>
         </div>
 
-        <div className="card card--between">
+        <div className="card card--between" ref={dockerTilt}>
           <div>
             <div className="card-title card-title--sm">DOCKER_SWARM_ORCHESTRATOR</div>
             <p className="card-desc">

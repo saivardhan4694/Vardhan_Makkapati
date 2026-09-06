@@ -21,11 +21,11 @@ export interface MainNode {
 // chain) — each hop changes direction, the way a real knowledge-graph
 // layout would, while keeping consecutive nodes roughly equidistant.
 const RAW_MAIN_NODES: MainNode[] = [
-  { id: "hero", label: "HERO", sub: "ENTRY_POINT", x: 0, y: 0 },
-  { id: "about", label: "ABOUT", sub: "PROFILE.SYS", x: 1300, y: 950 },
-  { id: "skills", label: "SKILLS", sub: "STACK.JSON", x: 2650, y: 260 },
-  { id: "projects", label: "PROJECTS", sub: "REPO[]:04", x: 1950, y: -1080 },
-  { id: "education", label: "EDUCATION", sub: "LOG.ACADEMIC", x: 3350, y: -680 },
+  { id: "hero", label: "WHOAMI", sub: "ENTRY_POINT", x: 0, y: 0 },
+  { id: "about", label: "PROFILE", sub: "USER.SYS", x: 1300, y: 950 },
+  { id: "skills", label: "STACK", sub: "SKILLS.JSON", x: 2650, y: 260 },
+  { id: "projects", label: "BUILDS", sub: "REPO[]:04", x: 1950, y: -1080 },
+  { id: "education", label: "TRAINING", sub: "LOG.ACADEMIC", x: 3350, y: -680 },
 ];
 
 // Deterministic PRNG so the decorative scatter is stable across renders.
