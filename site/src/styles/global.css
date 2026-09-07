@@ -1,11 +1,17 @@
 :root {
   --bg: #11141a;
   --bg-alt: #161a22;
+  /* Recessed panel surface — reads a step darker than the page so a box is
+     legible as its own plane without needing heavy borders. */
+  --surface: #080a0f;
   --border: #262b35;
   --border-strong: #363c49;
   --text: #e9e8df;
-  --text-dim: #a7abb0;
-  --text-dimmer: #656a74;
+  /* Secondary text was #a7abb0 / #656a74; both sat close enough to the
+     background to disappear at small sizes, so they are a couple of steps
+     brighter now. */
+  --text-dim: #c3c7cd;
+  --text-dimmer: #8d939e;
   --accent: #c7ff2f;
   --accent-soft: #d9ff70;
   --accent-dim: rgba(199, 255, 47, 0.14);
@@ -670,6 +676,10 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  /* Extra headroom on top of the panel's 72px: the content is centred in what
+     is left, so the block sits ~36px lower and clears the fixed SYSTEM_INIT /
+     CAMERA readout instead of crowding it. */
+  padding-top: 144px;
 }
 
 /* Shared box primitive — every section below is built from this. The frame is
@@ -679,7 +689,7 @@ body {
 .box {
   position: relative;
   border: 1px solid var(--border);
-  background-color: rgba(22, 26, 34, 0.4);
+  background-color: var(--surface);
   padding: 12px 16px;
 }
 
@@ -732,119 +742,350 @@ body {
   color: var(--text-dim);
 }
 
-/* Section scaffolding */
+/* Profile — screening summary of the other sections */
 
-.about-section {
-  margin-top: 8px;
+.screen-top {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: 1.55fr 1fr;
+  gap: 34px;
+  align-items: start;
 }
 
-.about-section-head {
-  font-size: 11px;
-  letter-spacing: 0.09em;
-  color: var(--text-dim);
-}
-
-.about-section-head::first-letter {
-  color: var(--accent);
-}
-
-/* Top status bar */
-
-.box--status-bar {
-  margin-top: 8px;
-  display: flex;
-  justify-content: space-between;
-  gap: 24px;
-}
-
-.status-bar-item {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.status-bar-key {
+.screen-intro-label {
   font-size: 10px;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   color: var(--text-dimmer);
 }
 
-.status-bar-val {
-  font-size: 12px;
+.screen-intro p {
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--text-dim);
+  max-width: 620px;
+}
+
+.screen-id {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  font-size: 11px;
+}
+
+.screen-id-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  color: var(--text-dimmer);
+}
+
+.screen-id-val {
+  color: var(--text);
   font-weight: 700;
   letter-spacing: 0.02em;
-  color: var(--text);
 }
 
-/* Why AI */
+/* Terminal window — the summary sections are tabs in it, each closable, with
+   `+` reopening the last one closed. */
 
-.box--why {
-  margin-top: 6px;
+.term {
+  margin-top: 20px;
+  padding: 0;
 }
 
-.box--why p {
-  margin: 0;
-  font-size: 12.5px;
-  line-height: 1.55;
+.term-bar {
+  display: flex;
+  align-items: stretch;
+  gap: 3px;
+  padding: 6px 8px 0;
+  border-bottom: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.term-tab {
+  display: flex;
+  align-items: center;
+  border: 1px solid transparent;
+  border-bottom: 0;
+  /* Sits over the bar's bottom rule so the active tab joins the body. */
+  margin-bottom: -1px;
+  padding-right: 4px;
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.term-tab:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.term-tab--active {
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+.term-tab-name {
+  border: 0;
+  background: none;
+  font-family: inherit;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  color: var(--text-dimmer);
+  padding: 8px 4px 8px 12px;
+  cursor: pointer;
+  transition: color 160ms ease;
+}
+
+.term-tab:hover .term-tab-name {
   color: var(--text-dim);
 }
 
-.why-emph {
-  margin-top: 8px !important;
-  color: var(--text) !important;
-  font-weight: 700;
+.term-tab--active .term-tab-name {
+  color: var(--accent);
 }
 
-/* How I build + User preferences share a row to save vertical space */
-
-.combo-grid {
-  display: grid;
-  grid-template-columns: 1.25fr 1fr;
-  gap: 28px;
-  align-items: stretch;
+.term-tab-close {
+  border: 0;
+  background: none;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1;
+  color: var(--text-dimmer);
+  padding: 3px 6px;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: color 140ms ease, opacity 140ms ease;
 }
 
-.combo-col {
+.term-tab-close:hover {
+  color: var(--accent);
+  opacity: 1;
+}
+
+.term-add {
+  border: 0;
+  background: none;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--text-dimmer);
+  padding: 4px 10px;
+  margin: 2px 0 4px 2px;
+  cursor: pointer;
+  transition: color 140ms ease;
+}
+
+.term-add:hover:not(:disabled) {
+  color: var(--accent);
+}
+
+.term-add:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.screen-jump {
+  margin: 4px 0 6px auto;
+  border: 1px solid var(--border-strong);
+  background: none;
+  font-family: inherit;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  padding: 5px 11px;
+  cursor: pointer;
+  transition: color 160ms ease, border-color 160ms ease;
+}
+
+.screen-jump:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* Terminal body */
+
+/* Sized to the tallest tab's output so nothing is cut off, and fixed so the
+   page occupies the same height whichever tab is open. */
+.term-body {
+  height: 212px;
+  padding: 14px 16px;
+  overflow: hidden;
+}
+
+.term-body--empty {
+  height: auto;
+}
+
+.term-prompt {
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--text-dim);
+  margin-bottom: 11px;
+}
+
+.term-user {
+  color: var(--accent);
+}
+
+.term-path {
+  color: var(--text-dimmer);
+}
+
+.term-out {
+  animation: screen-in 240ms ease both;
+}
+
+.term-empty-note {
+  font-size: 11.5px;
+  color: var(--text-dimmer);
+}
+
+/* Detail panel — one fixed-height frame shared by every tab, so no tab can
+   grow the page past the panel bounds. */
+
+@keyframes screen-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.screen-list {
   display: flex;
   flex-direction: column;
+  gap: 11px;
 }
 
-.combo-col .box {
-  flex: 1;
+.screen-row {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 20px;
+  align-items: baseline;
+  text-align: left;
 }
 
-.box--build {
-  margin-top: 6px;
+.screen-row--link {
+  border: 0;
+  background: none;
+  font-family: inherit;
+  padding: 0;
+  cursor: pointer;
+  border-left: 1px solid transparent;
+  padding-left: 10px;
+  margin-left: -10px;
+  transition: border-color 160ms ease;
+}
+
+.screen-row--link:hover {
+  border-left-color: var(--accent);
+}
+
+.screen-row--link:hover .screen-row-title {
+  color: var(--accent);
+}
+
+.screen-row-when {
   display: flex;
   align-items: center;
+  gap: 7px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--text-dimmer);
+  flex-wrap: wrap;
+}
+
+.screen-dot {
+  flex: none;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(199, 255, 47, 0.7);
+  animation: hero-pulse 2.2s ease-in-out infinite;
+}
+
+.screen-row-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  transition: color 160ms ease;
+}
+
+.screen-at {
+  color: var(--text-dimmer);
+  font-weight: 400;
+}
+
+.screen-row-note {
+  margin-top: 5px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
+.screen-row-note--flush {
+  margin-top: 0;
+}
+
+.screen-tag {
+  border: 1px solid var(--border-strong);
+  padding: 2px 7px;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+}
+
+/* Skills tab */
+
+.screen-skills {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 22px;
+}
+
+.screen-group-label {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+}
+
+.screen-chips {
+  margin-top: 12px;
+  display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-.build-step {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+.screen-chips--tight {
+  margin-top: 10px;
 }
 
-.build-step-label {
+.screen-chip {
   border: 1px solid var(--border-strong);
-  background: transparent;
-  padding: 6px 11px;
+  padding: 5px 10px;
   font-size: 10.5px;
-  letter-spacing: 0.05em;
-  color: var(--text);
+  letter-spacing: 0.03em;
+  color: var(--text-dim);
+  transition: color 160ms ease, border-color 160ms ease;
 }
 
-.build-step-arrow {
-  color: var(--accent);
-  font-size: 12px;
+.screen-chip:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.screen-chip--sm {
+  padding: 3px 8px;
+  font-size: 9.5px;
+  color: var(--text-dimmer);
 }
 
 /* Bottom status line */
 
 .box--status-line {
-  margin-top: 8px;
+  margin-top: 26px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -962,132 +1203,290 @@ body {
 /* Projects */
 
 .panel--projects {
-  padding-top: 56px;
-}
-
-.projects-grid {
-  margin-top: 20px;
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 16px;
-  height: calc(100% - 90px);
-}
-
-.card {
-  border: 1px solid var(--border);
-  background: var(--bg-alt);
-  padding: 22px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  transition: transform 150ms ease;
-  will-change: transform;
+  justify-content: center;
+  padding-top: 144px;
 }
 
-.card--wide {
-  grid-column: 1;
-  grid-row: 1;
-  border-color: rgba(199, 255, 47, 0.22);
+/* Repo browser — the builds index as a terminal file browser: directories
+   across the top, repositories down the left, the selected one opened on the
+   right. Every pane is a fixed height so the page cannot grow. */
+
+.repo-browser {
+  margin-top: 16px;
+  padding: 0;
 }
 
-.card-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
-.card-title {
-  font-size: 18px;
-  font-weight: 700;
-}
-
-.card-title--sm {
-  font-size: 15px;
-}
-
-.card-tags {
-  margin-top: 10px;
-  display: flex;
-  gap: 8px;
-}
-
-.tag {
-  border: 1px solid rgba(199, 255, 47, 0.3);
-  color: var(--text-dim);
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  padding: 3px 8px;
-}
-
-.card-links {
-  text-align: right;
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  color: var(--text-dim);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.card-media {
-  flex: 1;
-  min-height: 120px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  background-image: radial-gradient(var(--border-strong) 1px, transparent 1px);
-  background-size: 20px 20px;
-}
-
-.card-media--sm {
-  flex: none;
-  width: 180px;
-  height: 80px;
-  min-height: 0;
+.repo-bar {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 9px;
-  letter-spacing: 0.08em;
-  color: var(--border-strong);
+  gap: 4px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.28);
 }
 
-.card-desc {
-  margin: 0;
+.repo-dir {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid transparent;
+  background: none;
+  font-family: inherit;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  color: var(--text-dimmer);
+  padding: 6px 11px;
+  cursor: pointer;
+  transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease;
+}
+
+.repo-dir:hover {
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.repo-dir--active {
+  color: var(--accent);
+  border-color: var(--border);
+  background: var(--surface);
+}
+
+.repo-dir-count {
+  font-size: 9px;
+  color: var(--text-dimmer);
+  border: 1px solid var(--border);
+  padding: 1px 5px;
+}
+
+.repo-dir--active .repo-dir-count {
+  border-color: rgba(199, 255, 47, 0.4);
+  color: var(--accent);
+}
+
+.repo-gh {
+  margin-left: auto;
+  border: 1px solid var(--border-strong);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  text-decoration: none;
+  padding: 6px 11px;
+  transition: color 160ms ease, border-color 160ms ease;
+}
+
+.repo-gh:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.repo-split {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  height: 360px;
+}
+
+.repo-list-col {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+  padding: 12px 0 12px 14px;
+  min-height: 0;
+}
+
+.term-prompt--sm {
+  font-size: 10.5px;
+  margin-bottom: 10px;
+}
+
+.repo-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  /* Keeps a wheel over the list from chaining out and dragging the camera. */
+  overscroll-behavior: contain;
+  padding-right: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  outline: none;
+}
+
+.repo-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.repo-list::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+}
+
+.repo-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.repo-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--text-dim);
+  text-align: left;
+  padding: 6px 8px;
+  cursor: pointer;
+  transition: color 140ms ease, background-color 140ms ease;
+}
+
+.repo-row:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.repo-row--active {
+  color: var(--accent);
+  background: rgba(199, 255, 47, 0.07);
+}
+
+.repo-caret {
+  width: 8px;
+  flex: none;
+  color: var(--accent);
+}
+
+.repo-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.repo-star {
+  margin-left: auto;
+  font-size: 9px;
+  color: var(--accent);
+}
+
+/* Detail pane */
+
+@keyframes repo-in {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.repo-detail {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 18px;
+  min-height: 0;
+  overflow: hidden;
+  animation: repo-in 240ms ease both;
+}
+
+.repo-detail-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.repo-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.repo-badge {
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-size: 8.5px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  padding: 2px 6px;
+}
+
+.repo-year {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--text-dimmer);
+}
+
+.repo-blurb {
+  margin: 10px 0 0;
   font-size: 12px;
   line-height: 1.6;
   color: var(--text-dim);
+  max-width: 660px;
 }
 
-.card-index {
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  color: var(--text-dimmer);
+.repo-stack {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
 }
 
-.card-status {
-  margin-top: auto;
-  font-size: 11px;
-  letter-spacing: 0.05em;
-  color: var(--text-dimmer);
+.repo-points {
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.card--row {
-  flex-direction: row;
-  align-items: center;
-  gap: 20px;
+.repo-points li {
+  display: flex;
+  gap: 9px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--text-dim);
 }
 
-.card--between {
-  justify-content: space-between;
+.repo-bullet {
+  color: var(--accent);
+  flex: none;
 }
 
-.card-btn {
+/* Deliberately not pinned to the bottom of the pane: entries have different
+   numbers of points, and letting the output end where it ends — with empty
+   space below it — is what a terminal actually looks like. */
+.repo-open {
   align-self: flex-start;
+  margin-top: 18px;
   border: 1px solid var(--accent);
   color: var(--accent);
+  text-decoration: none;
   padding: 7px 14px;
-  font-size: 11px;
-  letter-spacing: 0.06em;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  transition: background-color 160ms ease;
+}
+
+.repo-open:hover {
+  background: rgba(199, 255, 47, 0.12);
+}
+
+/* Marks the end of the output so the space beneath a short entry reads as a
+   terminal waiting for the next command rather than an unfinished panel. */
+.repo-eof {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 14px;
+  font-size: 10px;
+  letter-spacing: 0.1em;
 }
 
 /* Education */
@@ -1096,53 +1495,238 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  padding-top: 144px;
 }
 
-.edu-list {
-  margin-top: 36px;
+/* Timeline (left) + certifications (right) share one box, the same combo-grid
+   pattern PROFILE uses for its paired terminal windows. */
+
+.edu-combo {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 0;
+  padding: 0;
+}
+
+.edu-combo-col {
+  padding: 14px 18px;
+  min-height: 0;
+}
+
+.edu-combo-col:first-child {
+  border-right: 1px solid var(--border);
+}
+
+.edu-timeline {
+  margin-top: 10px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
 }
 
-.edu-row {
-  border: 1px solid var(--border);
-  background: var(--bg-alt);
-  padding: 26px 30px;
+.edu-t-row {
   display: grid;
-  grid-template-columns: 1fr 1.4fr;
-  gap: 32px;
+  grid-template-columns: 44px 1fr;
+  gap: 14px;
+  padding: 11px 0;
+  border-top: 1px solid var(--border);
 }
 
-.edu-year {
-  font-size: 11px;
-  letter-spacing: 0.06em;
+.edu-t-row:last-child {
+  padding-bottom: 0;
+}
+
+.edu-t-year {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--border-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.edu-t-head {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+.edu-t-stage {
+  font-size: 9px;
+  letter-spacing: 0.08em;
   color: var(--accent);
+  border: 1px solid rgba(199, 255, 47, 0.35);
+  padding: 1px 6px;
 }
 
-.edu-school {
-  margin-top: 10px;
-  font-size: 20px;
+.edu-t-title {
+  font-size: 12.5px;
   font-weight: 700;
 }
 
-.edu-degree {
-  margin-top: 4px;
-  font-size: 13px;
+.edu-t-org {
+  margin-top: 5px;
+  font-size: 11px;
   color: var(--text-dim);
 }
 
-.edu-coursework-label {
-  font-size: 11px;
-  letter-spacing: 0.06em;
+.edu-t-score {
+  margin-top: 3px;
+  font-size: 10.5px;
   color: var(--text-dimmer);
 }
 
-.edu-coursework-cols {
+/* Certifications — a scrollable log rather than a wall of chips, since 13
+   entries as chips would wrap into an unreadable block at this width. */
+
+.edu-certs {
   margin-top: 10px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px 24px;
-  font-size: 12px;
+  height: 226px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.edu-certs::-webkit-scrollbar {
+  width: 6px;
+}
+
+.edu-certs::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+}
+
+.edu-certs::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.edu-cert-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 8px 2px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+}
+
+.edu-cert-row:last-child {
+  border-bottom: 1px solid var(--border);
+}
+
+.edu-cert-name {
   color: var(--text-dim);
+}
+
+.edu-cert-issuer {
+  flex: none;
+  color: var(--text-dimmer);
+  font-size: 10px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Ping */
+
+.panel--ping {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-top: 144px;
+}
+
+.ping-out {
+  margin-top: 16px;
+}
+
+.ping-rows {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+}
+
+.ping-row {
+  display: grid;
+  grid-template-columns: 52px 1fr 76px 56px 96px;
+  align-items: center;
+  gap: 14px;
+  padding: 9px 4px;
+  border-top: 1px solid var(--border);
+  font-size: 11.5px;
+  color: var(--text-dim);
+  text-decoration: none;
+  opacity: 0;
+  animation: screen-in 320ms ease both;
+}
+
+.ping-row:last-child {
+  border-bottom: 1px solid var(--border);
+}
+
+.ping-row--live {
+  cursor: pointer;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.ping-row--live:hover {
+  background: rgba(199, 255, 47, 0.06);
+  color: var(--text);
+}
+
+.ping-row--live:hover .ping-verb {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.ping-row--placeholder {
+  color: var(--text-dimmer);
+}
+
+.ping-seq {
+  color: var(--text-dimmer);
+  font-variant-numeric: tabular-nums;
+}
+
+.ping-host {
+  color: var(--text);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ping-row--placeholder .ping-host {
+  color: var(--text-dimmer);
+  font-weight: 400;
+}
+
+.ping-latency,
+.ping-ttl {
+  color: var(--text-dimmer);
+  font-variant-numeric: tabular-nums;
+}
+
+.ping-verb {
+  justify-self: end;
+  border: 1px solid var(--border-strong);
+  padding: 3px 8px;
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+  transition: color 160ms ease, border-color 160ms ease;
+}
+
+.ping-row--placeholder .ping-verb {
+  color: var(--text-dimmer);
+  border-color: var(--border);
+}
+
+.ping-summary {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-size: 10.5px;
+  line-height: 1.7;
+  color: var(--text-dimmer);
 }

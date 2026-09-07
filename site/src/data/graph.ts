@@ -1,7 +1,8 @@
 // World-space layout for the scroll-camera scene.
 // Coordinates are in "world px" at camera scale 1. Main nodes are laid out
 // as a SEQUENCE (a path graph) so the camera can travel edge-to-edge in
-// order: hero -> about -> skills -> projects -> education. Decorative nodes
+// order: hero -> about -> skills -> projects -> education -> ping. Decorative
+// nodes
 // are scattered around the path purely for the "network" visual texture —
 // they carry no navigation meaning.
 
@@ -24,8 +25,13 @@ const RAW_MAIN_NODES: MainNode[] = [
   { id: "hero", label: "WHOAMI", sub: "ENTRY_POINT", x: 0, y: 0 },
   { id: "about", label: "PROFILE", sub: "USER.SYS", x: 1300, y: 950 },
   { id: "skills", label: "STACK", sub: "SKILLS.JSON", x: 2650, y: 260 },
-  { id: "projects", label: "BUILDS", sub: "REPO[]:04", x: 1950, y: -1080 },
-  { id: "education", label: "TRAINING", sub: "LOG.ACADEMIC", x: 3350, y: -680 },
+  { id: "projects", label: "BUILDS", sub: "REPO[]", x: 1950, y: -1080 },
+  // Kept clear of the BUILDS frame: at 1950 these two overlapped in world x,
+  // so on wide viewports the education panel bled into the right-hand edge of
+  // the builds screen.
+  { id: "education", label: "TRAINING", sub: "LOG.ACADEMIC", x: 3900, y: -900 },
+  // dx from every other node is >= NODE_W so it can't overlap regardless of y.
+  { id: "ping", label: "PING", sub: "CONTACT.SYS", x: 5500, y: -300 },
 ];
 
 // Deterministic PRNG so the decorative scatter is stable across renders.

@@ -7,12 +7,13 @@ import About from "./sections/About";
 import Skills from "./sections/Skills";
 import Projects from "./sections/Projects";
 import Education from "./sections/Education";
+import Ping from "./sections/Ping";
 import { mainNodes, NODE_W, NODE_H, worldBounds } from "../data/graph";
 import { cameraAt, TOTAL_SEGMENTS, HIVE_ZOOM } from "../data/camera";
 
 gsap.registerPlugin(ScrollTrigger);
 
-const SECTION_COMPONENTS = [Hero, About, Skills, Projects, Education];
+const SECTION_COMPONENTS = [Hero, About, Skills, Projects, Education, Ping];
 
 // Scroll distance per camera segment (focus->hive or hive->focus), in vh.
 // Larger = more scroll travel per transition = slower, more controllable camera.
@@ -145,6 +146,14 @@ export default function Scene() {
           `perspective(${RIG_PERSPECTIVE}px) ` +
           `translate3d(0px, 0px, ${hiveAmount * RIG_MAX_RECEDE_Z}px) ` +
           `rotateX(${hiveAmount * RIG_MAX_TILT_DEG}deg)`;
+
+        // preserve-3d breaks hit testing on descendants in Chromium: clicks
+        // inside a focused panel land on the rig instead of the button under
+        // the cursor, which made every control in every panel dead. The 3D
+        // context is only needed while the plane is actually tilted, so drop
+        // to flat at focus — at this threshold the tilt is under a fifth of a
+        // degree, so nothing changes visually.
+        rigRef.current.style.transformStyle = hiveAmount < 0.02 ? "flat" : "preserve-3d";
       }
       if (fogRef.current) {
         fogRef.current.style.opacity = `${hiveAmount * 0.55}`;
@@ -203,6 +212,16 @@ export default function Scene() {
     window.addEventListener("wheel", cancelJump, { passive: true });
     window.addEventListener("touchstart", cancelJump, { passive: true });
 
+    // Panels can ask the camera to travel to another node by id — the profile
+    // summary uses this to open the full section behind each of its cards.
+    // An event keeps the panels decoupled from the camera rig.
+    const onNavRequest = (e: Event) => {
+      const id = (e as CustomEvent<{ id: string }>).detail?.id;
+      const index = mainNodes.findIndex((n) => n.id === id);
+      if (index >= 0) jumpToNode(index);
+    };
+    window.addEventListener("nav-node", onNavRequest);
+
     applyCamera(0);
 
     const onResize = () => {
@@ -216,6 +235,7 @@ export default function Scene() {
       window.removeEventListener("resize", onResize);
       window.removeEventListener("wheel", cancelJump);
       window.removeEventListener("touchstart", cancelJump);
+      window.removeEventListener("nav-node", onNavRequest);
       jumpTweenRef.current?.kill();
       trigger.kill();
     };
