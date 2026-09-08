@@ -1,4 +1,5 @@
 import { memo, useState } from "react";
+import { goToNode } from "../../lib/navNode";
 
 const STATUS_ITEMS = [
   { label: "ROLE", value: "AGENTIC AI DEVELOPER" },
@@ -104,10 +105,6 @@ const TABS: {
 ];
 
 const TAB_ORDER = TABS.map((t) => t.id);
-
-function goToNode(id: string) {
-  window.dispatchEvent(new CustomEvent("nav-node", { detail: { id } }));
-}
 
 function About() {
   // Terminal tabs: any of them can be closed, and `+` reopens the most

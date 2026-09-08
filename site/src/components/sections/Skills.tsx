@@ -1,85 +1,207 @@
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useMemo, useState } from "react";
+import { goToNode } from "../../lib/navNode";
 
-const SKILLS = [
-  { label: "LANG: PYTHON_3.12", pct: 98 },
-  { label: "LIB: PYTORCH_DEEP_L", pct: 92 },
-  { label: "LANG: C++ / CUDA", pct: 75 },
-  { label: "TOOL: DOCKER / K8S", pct: 88 },
+interface Evidence {
+  label: string;
+  node: string;
+}
+
+interface StackCategory {
+  id: string;
+  label: string;
+  /** Short directory-style name for the filter bar, e.g. "frameworks/". */
+  dir: string;
+  items: string[];
+  /** Real, textually-backed usage — not every category has one. */
+  evidence?: Evidence[];
+}
+
+// Every entry here is lifted straight from the technical-skills section of
+// the resume — nothing added, nothing dropped. `evidence` only appears where
+// an experience bullet or a BUILDS repo names that exact tool; everything
+// else is listed without a claim attached to it.
+const CATEGORIES: StackCategory[] = [
+  {
+    id: "languages",
+    label: "LANGUAGES",
+    dir: "languages/",
+    items: ["Python", "SQL", "Bash"],
+  },
+  {
+    id: "frameworks",
+    label: "AI / ML FRAMEWORKS",
+    dir: "frameworks/",
+    items: ["TensorFlow", "PyTorch", "LangChain", "LangGraph", "LlamaIndex", "HF Transformers"],
+    evidence: [
+      { label: "Main Flow internship", node: "about" },
+      { label: "BUILDS", node: "projects" },
+    ],
+  },
+  {
+    id: "models",
+    label: "MODELS & FINE-TUNING",
+    dir: "models/",
+    items: [
+      "LLaMA 2 / 3",
+      "Mistral",
+      "Falcon",
+      "GPT-4 / 4o",
+      "Gemini Pro",
+      "LoRA / QLoRA",
+      "RLHF (PPO, DPO)",
+    ],
+  },
+  {
+    id: "data",
+    label: "DATA & VECTOR STORES",
+    dir: "data/",
+    items: ["ChromaDB", "Pinecone", "Weaviate", "Qdrant", "PostgreSQL", "MongoDB", "MySQL", "DataStax Cassandra"],
+  },
+  {
+    id: "cloud",
+    label: "CLOUD & SERVING",
+    dir: "cloud/",
+    items: [
+      "AWS Bedrock",
+      "AWS SageMaker",
+      "AWS (EC2, Lambda, API Gateway, S3)",
+      "Docker",
+      "Kubernetes",
+      "FastAPI",
+      "Flask",
+      "Streamlit",
+      "Gradio",
+    ],
+    evidence: [{ label: "Main Flow internship", node: "about" }],
+  },
+  {
+    id: "multimodal",
+    label: "MULTIMODAL & CORE",
+    dir: "multimodal/",
+    items: ["Diffusers", "DALL·E", "CLIP", "BLIP-2", "Whisper", "Prompt Engineering", "RAG", "NLP"],
+  },
 ];
 
-const STACK_JSON = `{
-  "frameworks": ["TensorFlow", "JAX", "HuggingFace", "LangChain"],
-  "cloud": ["AWS_SageMaker", "GCP_VertexAI", "Azure_ML"],
-  "database": ["VectorDB_Pinecone", "PostgreSQL", "Redis"],
-  "version_control": "Git_LFS",
-  "cicd": ["GitHub_Actions", "MLOps_DVC"]
-}`;
+const TOOL_COUNT = CATEGORIES.reduce((n, c) => n + c.items.length, 0);
+
+type Filter = "all" | string;
 
 function Skills() {
-  const panelRef = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [filter, setFilter] = useState<Filter>("all");
 
-  // Bars fill in once this node is actually in view, not on mount — the
-  // camera keeps every node's DOM mounted at all times, so mount doesn't
-  // mean "arrived." IntersectionObserver correctly accounts for the world's
-  // transform (it measures rendered position, not layout position).
-  useEffect(() => {
-    const el = panelRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisible(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.55 }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(STACK_JSON);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1400);
-    } catch {
-      // clipboard API unavailable (e.g. insecure context) — fail quietly
-    }
-  };
+  const visible = useMemo(
+    () => (filter === "all" ? CATEGORIES : CATEGORIES.filter((c) => c.id === filter)),
+    [filter]
+  );
 
   return (
-    <div className="panel panel--skills" ref={panelRef}>
+    <div className="panel panel--skills">
       <div className="panel-kicker">&gt; STACK — SKILLS.JSON</div>
-      <h2 className="panel-title">CORE_SKILLS</h2>
-      <div className="skills-grid">
-        <div className="skills-bars">
-          {SKILLS.map((s, i) => (
-            <div className="skill-row" key={s.label}>
-              <div className="skill-row-top">
-                <span>{s.label}</span>
-                <span>{s.pct}%</span>
+
+      <div className="screen-top">
+        <div className="screen-intro">
+          <div className="screen-intro-label">TECH_STACK</div>
+          <p>
+            Everything below is something I've actually built with — an agent
+            framework, a production interview platform, or a project on
+            BUILDS. Not a checklist of frameworks I've only read about.
+          </p>
+        </div>
+
+        <div className="box screen-id">
+          <div className="screen-id-row">
+            <span className="screen-id-key">CATEGORIES</span>
+            <span className="screen-id-val">{String(CATEGORIES.length).padStart(2, "0")}</span>
+          </div>
+          <div className="screen-id-row">
+            <span className="screen-id-key">TOOLS_LOGGED</span>
+            <span className="screen-id-val">{TOOL_COUNT}</span>
+          </div>
+          <div className="screen-id-row">
+            <span className="screen-id-key">CORE_LANGUAGE</span>
+            <span className="screen-id-val">PYTHON</span>
+          </div>
+          <div className="screen-id-row">
+            <span className="screen-id-key">PRIMARY_CLOUD</span>
+            <span className="screen-id-val accent">AWS</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="box stack-browser">
+        <div className="repo-bar">
+          <button
+            type="button"
+            className={filter === "all" ? "repo-dir repo-dir--active" : "repo-dir"}
+            onClick={() => setFilter("all")}
+          >
+            all/
+            <span className="repo-dir-count">{TOOL_COUNT}</span>
+          </button>
+          {CATEGORIES.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              className={filter === c.id ? "repo-dir repo-dir--active" : "repo-dir"}
+              onClick={() => setFilter(c.id)}
+            >
+              {c.dir}
+              <span className="repo-dir-count">{c.items.length}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="term-prompt term-prompt--sm">
+          <span className="term-user">visitor@portfolio</span>
+          <span className="term-path">:~/stack$</span> cat skills.json
+          {filter !== "all" && ` | grep ${filter}`}
+        </div>
+
+        <div className="stack-grid">
+          {visible.map((c) => (
+            <div className="stack-cat" key={c.id}>
+              <div className="stack-cat-head">
+                <span className="stack-cat-label">{c.label}</span>
+                {c.evidence?.map((e) => (
+                  <button
+                    key={e.label}
+                    type="button"
+                    className="stack-evidence"
+                    onClick={() => goToNode(e.node)}
+                  >
+                    used in: {e.label} →
+                  </button>
+                ))}
               </div>
-              <div className="skill-bar-track">
-                <div
-                  className="skill-bar-fill"
-                  style={{
-                    width: visible ? `${s.pct}%` : "0%",
-                    transitionDelay: `${i * 90}ms`,
-                  }}
-                />
+              <div className="screen-chips">
+                {c.items.map((item) => (
+                  <span className="screen-chip" key={item}>
+                    {item}
+                  </span>
+                ))}
               </div>
             </div>
           ))}
         </div>
-        <div className="stack-json-wrap">
-          <button type="button" className={copied ? "copy-btn copy-btn--copied" : "copy-btn"} onClick={handleCopy}>
-            {copied ? "[ COPIED ]" : "[ COPY ]"}
-          </button>
-          <pre className="stack-json">{STACK_JSON}</pre>
+      </div>
+
+      <div className="box box--status-line">
+        <div className="status-line-item">
+          <span>CATEGORIES</span>
+          <span className="status-line-dots" />
+          <span className="accent">{String(CATEGORIES.length).padStart(2, "0")}</span>
         </div>
+        <div className="status-line-item">
+          <span>TOOLS_LOGGED</span>
+          <span className="status-line-dots" />
+          <span className="accent">{TOOL_COUNT}</span>
+        </div>
+        <div className="status-line-item">
+          <span>FILTER</span>
+          <span className="status-line-dots" />
+          <span className="accent">{filter === "all" ? "ALL" : filter.toUpperCase()}</span>
+        </div>
+        <span className="status-line-led" />
       </div>
     </div>
   );

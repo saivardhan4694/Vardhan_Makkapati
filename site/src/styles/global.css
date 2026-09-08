@@ -1122,82 +1122,80 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  padding-top: 144px;
 }
 
-.skills-grid {
-  margin-top: 40px;
-  display: grid;
-  grid-template-columns: 1.2fr 1fr;
-  gap: 56px;
+/* Stack browser — same filter-bar language as BUILDS' repo browser (directory
+   chips with live counts), applied to skill categories instead of repos. */
+
+.stack-browser {
+  margin-top: 16px;
+  padding: 0;
 }
 
-.skills-bars {
+.stack-browser .repo-bar {
+  flex-wrap: wrap;
+  row-gap: 4px;
+}
+
+.stack-browser .term-prompt--sm {
+  padding: 12px 18px 0;
+  margin-bottom: 0;
+}
+
+.stack-grid {
+  height: 238px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 14px 18px 4px;
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 16px;
 }
 
-.skill-row-top {
+.stack-grid::-webkit-scrollbar {
+  width: 6px;
+}
+
+.stack-grid::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+}
+
+.stack-grid::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.stack-cat-head {
   display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  letter-spacing: 0.04em;
-  color: var(--text-dim);
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
-.skill-bar-track {
-  margin-top: 8px;
-  height: 3px;
-  background: var(--border);
-}
-
-.skill-bar-fill {
-  height: 100%;
-  width: 0%;
-  background: var(--accent);
-  box-shadow: 0 0 8px rgba(199, 255, 47, 0.45);
-  transition: width 900ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.stack-json-wrap {
-  position: relative;
-}
-
-.copy-btn {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 1;
-  border: 1px solid var(--border-strong);
-  background: var(--bg);
-  color: var(--text-dim);
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 10px;
-  letter-spacing: 0.05em;
-  padding: 3px 8px;
-  cursor: pointer;
-  transition: color 200ms ease, border-color 200ms ease;
-}
-
-.copy-btn:hover {
-  color: var(--text);
-  border-color: var(--accent);
-}
-
-.copy-btn--copied {
+.stack-cat-label {
+  font-size: 10.5px;
+  letter-spacing: 0.09em;
   color: var(--accent);
-  border-color: var(--accent);
 }
 
-.stack-json {
-  margin: 0;
-  padding: 22px 24px;
-  border: 1px solid var(--border);
-  background: var(--bg-alt);
-  font-size: 12px;
-  line-height: 1.8;
-  color: var(--text-dim);
-  white-space: pre-wrap;
+.stack-evidence {
+  border: 0;
+  background: none;
+  font-family: inherit;
+  font-size: 9.5px;
+  letter-spacing: 0.03em;
+  color: var(--text-dimmer);
+  padding: 0;
+  cursor: pointer;
+  transition: color 160ms ease;
+}
+
+.stack-evidence:hover {
+  color: var(--accent);
+}
+
+.stack-cat .screen-chips {
+  margin-top: 9px;
 }
 
 /* Projects */
