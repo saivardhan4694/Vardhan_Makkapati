@@ -479,13 +479,6 @@ body {
   color: var(--text-dimmer);
 }
 
-.panel-title {
-  margin: 14px 0 0;
-  font-size: 40px;
-  font-weight: 800;
-  letter-spacing: -0.01em;
-}
-
 /* Hero */
 
 .panel--hero {
@@ -711,37 +704,6 @@ body {
   background-origin: padding-box;
 }
 
-.box-grid {
-  margin-top: 6px;
-  display: grid;
-  gap: 16px;
-}
-
-.box-grid--4 {
-  grid-template-columns: repeat(4, 1fr);
-}
-
-.box-num {
-  font-size: 11px;
-  color: var(--accent);
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
-}
-
-.box-title {
-  margin-top: 5px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-
-.box-body {
-  margin-top: 5px;
-  font-size: 11px;
-  line-height: 1.5;
-  color: var(--text-dim);
-}
-
 /* Profile — screening summary of the other sections */
 
 .screen-top {
@@ -753,14 +715,14 @@ body {
 }
 
 .screen-intro-label {
-  font-size: 10px;
+  font-size: 11.5px;
   letter-spacing: 0.12em;
   color: var(--text-dimmer);
 }
 
 .screen-intro p {
   margin: 10px 0 0;
-  font-size: 12.5px;
+  font-size: 13.5px;
   line-height: 1.65;
   color: var(--text-dim);
   max-width: 620px;
@@ -770,7 +732,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 9px;
-  font-size: 11px;
+  font-size: 12.5px;
 }
 
 .screen-id-row {
@@ -818,17 +780,26 @@ body {
   background: rgba(255, 255, 255, 0.03);
 }
 
+/* Solid fill rather than a text-color swap — the active tab needs to read as
+   a distinct, selected object at a glance, not just slightly brighter text. */
 .term-tab--active {
-  background: var(--surface);
-  border-color: var(--border);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+/* Wins the tie with .term-tab:hover (equal specificity, later in source) so
+   hovering the already-active tab doesn't dim its fill back down. */
+.term-tab--active:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent-soft);
 }
 
 .term-tab-name {
   border: 0;
   background: none;
   font-family: inherit;
-  font-size: 10.5px;
-  letter-spacing: 0.06em;
+  font-size: 12px;
+  letter-spacing: 0.05em;
   color: var(--text-dimmer);
   padding: 8px 4px 8px 12px;
   cursor: pointer;
@@ -840,7 +811,15 @@ body {
 }
 
 .term-tab--active .term-tab-name {
-  color: var(--accent);
+  color: var(--bg);
+  font-weight: 700;
+}
+
+/* Same specificity tie as the tab-level rules above: without this, hovering
+   an already-active tab falls back to .term-tab:hover .term-tab-name's grey,
+   leaving grey text on a green fill. */
+.term-tab--active:hover .term-tab-name {
+  color: var(--bg);
 }
 
 .term-tab-close {
@@ -858,6 +837,15 @@ body {
 
 .term-tab-close:hover {
   color: var(--accent);
+  opacity: 1;
+}
+
+.term-tab--active .term-tab-close {
+  color: var(--bg);
+  opacity: 0.55;
+}
+
+.term-tab--active .term-tab-close:hover {
   opacity: 1;
 }
 
@@ -916,7 +904,7 @@ body {
 }
 
 .term-prompt {
-  font-size: 11px;
+  font-size: 12.5px;
   letter-spacing: 0.02em;
   color: var(--text-dim);
   margin-bottom: 11px;
@@ -935,7 +923,7 @@ body {
 }
 
 .term-empty-note {
-  font-size: 11.5px;
+  font-size: 13px;
   color: var(--text-dimmer);
 }
 
@@ -961,7 +949,7 @@ body {
 
 .screen-row {
   display: grid;
-  grid-template-columns: 150px 1fr;
+  grid-template-columns: 168px 1fr;
   gap: 20px;
   align-items: baseline;
   text-align: left;
@@ -991,8 +979,8 @@ body {
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 10px;
-  letter-spacing: 0.08em;
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
   color: var(--text-dimmer);
   flex-wrap: wrap;
 }
@@ -1021,7 +1009,7 @@ body {
 
 .screen-row-note {
   margin-top: 5px;
-  font-size: 11.5px;
+  font-size: 13px;
   line-height: 1.5;
   color: var(--text-dim);
 }
@@ -1033,8 +1021,8 @@ body {
 .screen-tag {
   border: 1px solid var(--border-strong);
   padding: 2px 7px;
-  font-size: 9px;
-  letter-spacing: 0.06em;
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
 }
 
 /* Skills tab */
@@ -1046,8 +1034,8 @@ body {
 }
 
 .screen-group-label {
-  font-size: 10px;
-  letter-spacing: 0.1em;
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
   color: var(--accent);
 }
 
@@ -1065,8 +1053,8 @@ body {
 .screen-chip {
   border: 1px solid var(--border-strong);
   padding: 5px 10px;
-  font-size: 10.5px;
-  letter-spacing: 0.03em;
+  font-size: 12px;
+  letter-spacing: 0.02em;
   color: var(--text-dim);
   transition: color 160ms ease, border-color 160ms ease;
 }
@@ -1078,7 +1066,7 @@ body {
 
 .screen-chip--sm {
   padding: 3px 8px;
-  font-size: 9.5px;
+  font-size: 11px;
   color: var(--text-dimmer);
 }
 
@@ -1090,8 +1078,8 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  font-size: 11px;
-  letter-spacing: 0.04em;
+  font-size: 12.5px;
+  letter-spacing: 0.03em;
   color: var(--text-dimmer);
 }
 
@@ -1173,8 +1161,8 @@ body {
 }
 
 .stack-cat-label {
-  font-size: 10.5px;
-  letter-spacing: 0.09em;
+  font-size: 12px;
+  letter-spacing: 0.07em;
   color: var(--accent);
 }
 
@@ -1182,8 +1170,8 @@ body {
   border: 0;
   background: none;
   font-family: inherit;
-  font-size: 9.5px;
-  letter-spacing: 0.03em;
+  font-size: 11px;
+  letter-spacing: 0.02em;
   color: var(--text-dimmer);
   padding: 0;
   cursor: pointer;
@@ -1232,8 +1220,8 @@ body {
   border: 1px solid transparent;
   background: none;
   font-family: inherit;
-  font-size: 10.5px;
-  letter-spacing: 0.06em;
+  font-size: 12.5px;
+  letter-spacing: 0.04em;
   color: var(--text-dimmer);
   padding: 6px 11px;
   cursor: pointer;
@@ -1245,29 +1233,42 @@ body {
   background: rgba(255, 255, 255, 0.03);
 }
 
+/* Solid fill rather than a text-color swap — the active filter needs to read
+   as a distinct, selected object at a glance, not just slightly brighter
+   text on the same dark background as everything else. */
 .repo-dir--active {
-  color: var(--accent);
-  border-color: var(--border);
-  background: var(--surface);
+  color: var(--bg);
+  border-color: var(--accent);
+  background: var(--accent);
+  font-weight: 700;
+}
+
+/* Wins the tie with .repo-dir:hover (equal specificity, later in source) so
+   hovering the already-active filter doesn't dim its fill back down. */
+.repo-dir--active:hover {
+  color: var(--bg);
+  background: var(--accent-soft);
+  border-color: var(--accent-soft);
 }
 
 .repo-dir-count {
-  font-size: 9px;
+  font-size: 10.5px;
   color: var(--text-dimmer);
   border: 1px solid var(--border);
   padding: 1px 5px;
 }
 
 .repo-dir--active .repo-dir-count {
-  border-color: rgba(199, 255, 47, 0.4);
-  color: var(--accent);
+  border-color: var(--bg);
+  color: var(--bg);
+  background: rgba(0, 0, 0, 0.15);
 }
 
 .repo-gh {
   margin-left: auto;
   border: 1px solid var(--border-strong);
-  font-size: 10px;
-  letter-spacing: 0.08em;
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
   color: var(--text-dim);
   text-decoration: none;
   padding: 6px 11px;
@@ -1282,7 +1283,7 @@ body {
 .repo-split {
   display: grid;
   grid-template-columns: 300px 1fr;
-  height: 360px;
+  height: 374px;
 }
 
 .repo-list-col {
@@ -1294,7 +1295,7 @@ body {
 }
 
 .term-prompt--sm {
-  font-size: 10.5px;
+  font-size: 12px;
   margin-bottom: 10px;
 }
 
@@ -1330,11 +1331,11 @@ body {
   border: 0;
   background: none;
   font-family: inherit;
-  font-size: 11px;
-  letter-spacing: 0.02em;
+  font-size: 13px;
+  letter-spacing: 0.01em;
   color: var(--text-dim);
   text-align: left;
-  padding: 6px 8px;
+  padding: 7px 8px;
   cursor: pointer;
   transition: color 140ms ease, background-color 140ms ease;
 }
@@ -1408,21 +1409,21 @@ body {
 .repo-badge {
   border: 1px solid var(--accent);
   color: var(--accent);
-  font-size: 8.5px;
+  font-size: 10px;
   font-weight: 400;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   padding: 2px 6px;
 }
 
 .repo-year {
-  font-size: 10px;
-  letter-spacing: 0.08em;
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
   color: var(--text-dimmer);
 }
 
 .repo-blurb {
   margin: 10px 0 0;
-  font-size: 12px;
+  font-size: 13.5px;
   line-height: 1.6;
   color: var(--text-dim);
   max-width: 660px;
@@ -1447,7 +1448,7 @@ body {
 .repo-points li {
   display: flex;
   gap: 9px;
-  font-size: 11.5px;
+  font-size: 13px;
   line-height: 1.45;
   color: var(--text-dim);
 }
@@ -1467,8 +1468,8 @@ body {
   color: var(--accent);
   text-decoration: none;
   padding: 7px 14px;
-  font-size: 10.5px;
-  letter-spacing: 0.08em;
+  font-size: 12px;
+  letter-spacing: 0.06em;
   transition: background-color 160ms ease;
 }
 
@@ -1483,8 +1484,8 @@ body {
   align-items: center;
   gap: 4px;
   margin-top: 14px;
-  font-size: 10px;
-  letter-spacing: 0.1em;
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
 }
 
 /* Education */
@@ -1549,27 +1550,27 @@ body {
 }
 
 .edu-t-stage {
-  font-size: 9px;
-  letter-spacing: 0.08em;
+  font-size: 10px;
+  letter-spacing: 0.06em;
   color: var(--accent);
   border: 1px solid rgba(199, 255, 47, 0.35);
   padding: 1px 6px;
 }
 
 .edu-t-title {
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 700;
 }
 
 .edu-t-org {
   margin-top: 5px;
-  font-size: 11px;
+  font-size: 12.5px;
   color: var(--text-dim);
 }
 
 .edu-t-score {
   margin-top: 3px;
-  font-size: 10.5px;
+  font-size: 11.5px;
   color: var(--text-dimmer);
 }
 
@@ -1605,7 +1606,7 @@ body {
   gap: 12px;
   padding: 8px 2px;
   border-top: 1px solid var(--border);
-  font-size: 11px;
+  font-size: 12.5px;
 }
 
 .edu-cert-row:last-child {
@@ -1619,7 +1620,7 @@ body {
 .edu-cert-issuer {
   flex: none;
   color: var(--text-dimmer);
-  font-size: 10px;
+  font-size: 11px;
   text-align: right;
   white-space: nowrap;
 }
@@ -1645,12 +1646,12 @@ body {
 
 .ping-row {
   display: grid;
-  grid-template-columns: 52px 1fr 76px 56px 96px;
+  grid-template-columns: 58px 1fr 80px 58px 100px;
   align-items: center;
   gap: 14px;
-  padding: 9px 4px;
+  padding: 10px 4px;
   border-top: 1px solid var(--border);
-  font-size: 11.5px;
+  font-size: 13px;
   color: var(--text-dim);
   text-decoration: none;
   opacity: 0;
@@ -1709,8 +1710,8 @@ body {
   justify-self: end;
   border: 1px solid var(--border-strong);
   padding: 3px 8px;
-  font-size: 9.5px;
-  letter-spacing: 0.06em;
+  font-size: 11px;
+  letter-spacing: 0.04em;
   color: var(--text-dim);
   transition: color 160ms ease, border-color 160ms ease;
 }
@@ -1724,7 +1725,7 @@ body {
   margin-top: 16px;
   padding-top: 12px;
   border-top: 1px solid var(--border);
-  font-size: 10.5px;
+  font-size: 12px;
   line-height: 1.7;
   color: var(--text-dimmer);
 }

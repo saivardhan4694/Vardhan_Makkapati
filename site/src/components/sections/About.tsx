@@ -1,5 +1,6 @@
 import { memo, useState } from "react";
 import { goToNode } from "../../lib/navNode";
+import { PROJECTS as ALL_PROJECTS } from "../../data/projects";
 
 const STATUS_ITEMS = [
   { label: "ROLE", value: "AGENTIC AI DEVELOPER" },
@@ -46,23 +47,18 @@ const SKILL_GROUPS = [
   },
 ];
 
-const PROJECTS = [
-  {
-    name: "NEURAL_REDACTOR",
-    tags: ["NLP", "PRIVACY"],
-    note: "Transformer NER masking PII across distributed logs in real time.",
-  },
-  {
-    name: "LATENCY_CORE_V3",
-    tags: ["C++", "EDGE"],
-    note: "Inference engine for ARM — sub-5ms responses on edge devices.",
-  },
-  {
-    name: "GAN_SYNTH_24",
-    tags: ["GENERATIVE"],
-    note: "Synthetic dataset generation for autonomous navigation training.",
-  },
+// A 3-project digest of the real BUILDS list, one per category flavour —
+// pulled from the same data BUILDS renders so the two can't drift apart the
+// way the old hard-coded placeholder list did.
+const DIGEST_IDS = [
+  "ai-coding-assistent",
+  "FootBall-Analysis-system-using-Computer-Vision",
+  "coustomer_churn_prediction_system",
 ];
+const PROJECTS = DIGEST_IDS.map((id) => {
+  const p = ALL_PROJECTS.find((x) => x.id === id)!;
+  return { name: p.title, tags: p.stack.slice(0, 2), note: p.blurb };
+});
 
 const EDUCATION = {
   degree: "B.TECH — [YOUR_BRANCH]",
