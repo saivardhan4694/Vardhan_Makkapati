@@ -9,7 +9,12 @@ import Projects from "./sections/Projects";
 import Education from "./sections/Education";
 import Ping from "./sections/Ping";
 import { mainNodes, NODE_W, NODE_H, worldBounds } from "../data/graph";
-import { cameraAt, TOTAL_SEGMENTS, HIVE_ZOOM } from "../data/camera";
+import { cameraAt, easeInOutCubic, TOTAL_SEGMENTS, HIVE_ZOOM, FOCUS_SCALE } from "../data/camera";
+
+// Fraction of a nav jump's duration spent zooming out / zooming back in; the
+// rest is spent cruising at hive altitude. Applied regardless of how many
+// intermediate nodes the jump's path happens to cross.
+const JUMP_ZOOM_RAMP = 0.18;
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -62,7 +67,7 @@ export default function Scene() {
   const [showSignals, setShowSignals] = useState(true);
   const showSignalsRef = useRef(true);
   const triggerRef = useRef<ScrollTrigger | null>(null);
-  const applyCameraRef = useRef<((progress: number) => void) | null>(null);
+  const applyCameraRef = useRef<((progress: number, scaleOverride?: number) => void) | null>(null);
   const jumpTweenRef = useRef<gsap.core.Tween | null>(null);
   // Mirror of the camera's current progress, kept by applyCamera. A jump reads
   // its starting point from here rather than from the trigger.
@@ -87,21 +92,53 @@ export default function Scene() {
       segmentsCrossed * JUMP_SECONDS_PER_SEGMENT
     );
 
+    // The scale a plain progress-tween would start from — usually 1 (focused
+    // on a node), but reads whatever's actually on screen so an interrupted
+    // jump redirecting mid-flight still starts its zoom-out from there rather
+    // than snapping.
+    const fromScale = cameraAt(fromProgress).scale;
+
     jumpTweenRef.current?.kill();
     jumpingRef.current = true;
 
     const state = { p: fromProgress };
+    const span = toProgress - fromProgress;
     jumpTweenRef.current = gsap.to(state, {
       p: toProgress,
       duration,
       ease: "sine.inOut",
       onUpdate: () => {
+        // Position (and the nav/HUD labels) still follow the real path
+        // through every node in between — that's what makes this read as
+        // travel along the graph rather than a teleport. Scale is driven
+        // separately: zoom out at the start, hold at hive altitude no
+        // matter how many nodes the path passes on the way, zoom in only
+        // at the very end — so intermediate nodes are passed over, not
+        // individually focused.
+        const t = span === 0 ? 1 : (state.p - fromProgress) / span;
+        let scaleOverride: number;
+        if (t <= JUMP_ZOOM_RAMP) {
+          scaleOverride = gsap.utils.interpolate(
+            fromScale,
+            HIVE_ZOOM,
+            easeInOutCubic(t / JUMP_ZOOM_RAMP)
+          );
+        } else if (t >= 1 - JUMP_ZOOM_RAMP) {
+          scaleOverride = gsap.utils.interpolate(
+            HIVE_ZOOM,
+            FOCUS_SCALE,
+            easeInOutCubic((t - (1 - JUMP_ZOOM_RAMP)) / JUMP_ZOOM_RAMP)
+          );
+        } else {
+          scaleOverride = HIVE_ZOOM;
+        }
+
         // Drive the camera ourselves — scrub is still fed the matching
         // scroll position (so it stays caught up and there's nothing to
         // snap back to once we hand control back), but its own smoothed
         // output is ignored for the duration of the jump so only one curve
         // is ever driving the camera at a time.
-        applyCameraRef.current?.(state.p);
+        applyCameraRef.current?.(state.p, scaleOverride);
         trigger.scroll(trigger.start + state.p * (trigger.end - trigger.start));
       },
       onComplete: () => {
@@ -122,17 +159,22 @@ export default function Scene() {
 
     // Runs on every animation frame, so it writes styles directly rather than
     // through gsap.set (each of those allocates a zero-duration tween).
-    const applyCamera = (progress: number) => {
+    //
+    // `scaleOverride` lets a nav jump drive the zoom level independently of
+    // raw scroll progress (see jumpToNode) — position and labels still come
+    // from the real path at `progress`, only how zoomed-in we render differs.
+    const applyCamera = (progress: number, scaleOverride?: number) => {
       renderProgressRef.current = progress;
       const cam = cameraAt(progress);
-      const scale = cam.scale * baseScale;
+      const camScale = scaleOverride ?? cam.scale;
+      const scale = camScale * baseScale;
       const tx = window.innerWidth / 2 - cam.cx * scale;
       const ty = window.innerHeight / 2 - cam.cy * scale;
       world.style.transform = `translate3d(${tx}px, ${ty}px, 0px) scale(${scale})`;
 
       // Crossfade the graph overlay in as the camera pulls back toward the
       // hive zoom, and out as it locks onto a node in focus.
-      const focusAmount = Math.min(Math.max((cam.scale - HIVE_ZOOM) / (1 - HIVE_ZOOM), 0), 1);
+      const focusAmount = Math.min(Math.max((camScale - HIVE_ZOOM) / (1 - HIVE_ZOOM), 0), 1);
       if (graphRef.current) {
         graphRef.current.style.opacity = `${1 - focusAmount}`;
       }
@@ -176,8 +218,8 @@ export default function Scene() {
         coordRef.current.textContent = `LOC: ${cam.cx.toFixed(0)} / ${cam.cy.toFixed(0)}`;
       }
       if (camReadoutRef.current) {
-        const state = cam.scale < 0.6 ? "ZOOM_OUT" : "LOCKED";
-        camReadoutRef.current.textContent = `CAMERA: ${state} [${cam.scale.toFixed(2)}x] — ${cam.segmentLabel}`;
+        const state = camScale < 0.6 ? "ZOOM_OUT" : "LOCKED";
+        camReadoutRef.current.textContent = `CAMERA: ${state} [${camScale.toFixed(2)}x] — ${cam.segmentLabel}`;
       }
       if (scrollPctRef.current) {
         scrollPctRef.current.textContent = `SCROLL_PROGRESS: ${Math.round(progress * 100)}%`;
