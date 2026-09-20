@@ -25,8 +25,8 @@ const DecorativeMesh = memo(function DecorativeMesh() {
 // fully visible while the camera is pulled back into the "hive" overview —
 // that's what lets a small/unreadable-at-a-distance panel still read as a
 // labeled node in the network.
-const GraphLayer = forwardRef<SVGSVGElement, { activeIndex: number; showSignals: boolean }>(
-  function GraphLayer({ activeIndex, showSignals }, ref) {
+const GraphLayer = forwardRef<SVGSVGElement, { activeIndex: number }>(
+  function GraphLayer({ activeIndex }, ref) {
   return (
     <svg
       ref={ref}
@@ -56,23 +56,19 @@ const GraphLayer = forwardRef<SVGSVGElement, { activeIndex: number; showSignals:
               y2={e.y2}
               className={isCurrent ? "edge edge--path edge--current" : "edge edge--path"}
             />
-            {showSignals && (
-              <>
-                <path id={pathId} d={`M ${e.x1} ${e.y1} L ${e.x2} ${e.y2}`} fill="none" stroke="none" />
-                <circle r="3.5" className="signal-dot">
-                  <animateMotion dur="2.8s" repeatCount="indefinite" rotate="0">
-                    <mpath href={`#${pathId}`} />
-                  </animateMotion>
-                  <animate
-                    attributeName="opacity"
-                    values="0;1;1;0"
-                    keyTimes="0;0.12;0.85;1"
-                    dur="2.8s"
-                    repeatCount="indefinite"
-                  />
-                </circle>
-              </>
-            )}
+            <path id={pathId} d={`M ${e.x1} ${e.y1} L ${e.x2} ${e.y2}`} fill="none" stroke="none" />
+            <circle r="3.5" className="signal-dot">
+              <animateMotion dur="2.8s" repeatCount="indefinite" rotate="0">
+                <mpath href={`#${pathId}`} />
+              </animateMotion>
+              <animate
+                attributeName="opacity"
+                values="0;1;1;0"
+                keyTimes="0;0.12;0.85;1"
+                dur="2.8s"
+                repeatCount="indefinite"
+              />
+            </circle>
           </g>
         );
       })}

@@ -50,6 +50,41 @@ const JUMP_MIN_SECONDS = 1.35;
 // panels are letterboxed slightly on very wide screens instead.
 const MAX_BASE_SCALE = 1.2;
 
+// Below this the rig's tilt is visually indistinguishable from flat, so the
+// perspective/rotateX transform is skipped entirely rather than writing an
+// identity 3D stack — a redundant 3D matrix still costs real compute even at
+// 0deg. A real but modest win on its own (profiled under 4x CPU throttle:
+// severe-stutter frames >33ms dropped from ~50 to ~48 out of a few hundred).
+const RIG_TILT_EPSILON = 0.02;
+
+// Profiling under 4x CPU throttle (Chrome DevTools CPU throttling, a rough
+// proxy for a weak/old CPU) found no single dominant cost inside applyCamera
+// — pausing every CSS animation, hiding the canvas, hiding all off-screen
+// panel content, and freezing the transform's scale component each measured
+// as noise individually. What did move the needle was disabling the whole
+// function's per-frame work at once (severe-stutter frames >33ms: ~50 -> ~5
+// out of a few hundred sampled), meaning the cost is cumulative across many
+// small contributors (cameraAt's keyframe search, the 3D rig transform, the
+// SVG opacity crossfade, conditional React state, three textContent writes)
+// rather than one line to delete. So low-power mode doesn't try to strip any
+// single piece further — it runs the whole thing less often instead.
+const LOW_POWER_FPS_CAP = 24;
+const LOW_POWER_FRAME_INTERVAL_MS = 1000 / LOW_POWER_FPS_CAP;
+
+// A simple, synchronous capability check — no timers, no async warm-up, so it
+// can gate the very first frame. `hardwareConcurrency`/`deviceMemory` are
+// coarse, but they're exactly the signal that correlates with "the camera's
+// per-frame math is going to cost this device real frame budget": low core
+// count or low RAM means a weak/older/integrated GPU behind it too, almost
+// always. Unsupported properties (Safari lacks deviceMemory) fail open — a
+// device we can't measure is assumed capable rather than degraded by default.
+function detectLowPowerDevice(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const cores = navigator.hardwareConcurrency ?? 8;
+  const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8;
+  return cores <= 4 || memory <= 4;
+}
+
 export default function Scene() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const rigRef = useRef<HTMLDivElement>(null);
@@ -64,10 +99,13 @@ export default function Scene() {
 
   const [activeIndex, setActiveIndex] = useState(0);
   const activeIndexRef = useRef(0);
-  const [showSignals, setShowSignals] = useState(true);
   const showSignalsRef = useRef(true);
+  // Lazy initializer: computed exactly once, before first paint.
+  const [lowPowerMode] = useState(detectLowPowerDevice);
   const triggerRef = useRef<ScrollTrigger | null>(null);
-  const applyCameraRef = useRef<((progress: number, scaleOverride?: number) => void) | null>(null);
+  const applyCameraRef = useRef<
+    ((progress: number, scaleOverride?: number, force?: boolean) => void) | null
+  >(null);
   const jumpTweenRef = useRef<gsap.core.Tween | null>(null);
   // Mirror of the camera's current progress, kept by applyCamera. A jump reads
   // its starting point from here rather than from the trigger.
@@ -138,7 +176,11 @@ export default function Scene() {
         // snap back to once we hand control back), but its own smoothed
         // output is ignored for the duration of the jump so only one curve
         // is ever driving the camera at a time.
-        applyCameraRef.current?.(state.p, scaleOverride);
+        //
+        // `force: true` on the exact final tick — low-power mode throttles
+        // how often applyCamera does its work, and without this the jump
+        // could land a throttle-interval short of its actual destination.
+        applyCameraRef.current?.(state.p, scaleOverride, state.p === toProgress);
         trigger.scroll(trigger.start + state.p * (trigger.end - trigger.start));
       },
       onComplete: () => {
@@ -156,6 +198,7 @@ export default function Scene() {
     if (!world || !section) return;
 
     let baseScale = Math.min(window.innerWidth / NODE_W, MAX_BASE_SCALE);
+    let lastAppliedAt = 0;
 
     // Runs on every animation frame, so it writes styles directly rather than
     // through gsap.set (each of those allocates a zero-duration tween).
@@ -163,8 +206,26 @@ export default function Scene() {
     // `scaleOverride` lets a nav jump drive the zoom level independently of
     // raw scroll progress (see jumpToNode) — position and labels still come
     // from the real path at `progress`, only how zoomed-in we render differs.
-    const applyCamera = (progress: number, scaleOverride?: number) => {
+    //
+    // `force` bypasses the low-power throttle below — used for the exact
+    // final tick of a jump so a transition always lands precisely instead of
+    // stopping a throttle-interval short.
+    const applyCamera = (progress: number, scaleOverride?: number, force = false) => {
       renderProgressRef.current = progress;
+
+      // Profiling found no single expensive line inside this function on a
+      // CPU-throttled device — the cost is cumulative across many small
+      // pieces (see LOW_POWER_FPS_CAP above). So rather than cut any one of
+      // them further, low-power mode just runs all of it less often. Scroll
+      // position (renderProgressRef, just set above) still updates every
+      // call either way, so a jump starting mid-throttle always reads the
+      // right place to resume from.
+      if (lowPowerMode && !force) {
+        const now = performance.now();
+        if (now - lastAppliedAt < LOW_POWER_FRAME_INTERVAL_MS) return;
+        lastAppliedAt = now;
+      }
+
       const cam = cameraAt(progress);
       const camScale = scaleOverride ?? cam.scale;
       const scale = camScale * baseScale;
@@ -182,12 +243,20 @@ export default function Scene() {
       // Tilt and recede the whole plane as the camera pulls back — this is
       // what turns a flat scale/translate zoom into an actual sense of
       // moving through depth, then levels flat again once a node is focused.
-      const hiveAmount = 1 - focusAmount;
+      const hiveAmount = lowPowerMode ? 0 : 1 - focusAmount;
       if (rigRef.current) {
-        rigRef.current.style.transform =
-          `perspective(${RIG_PERSPECTIVE}px) ` +
-          `translate3d(0px, 0px, ${hiveAmount * RIG_MAX_RECEDE_Z}px) ` +
-          `rotateX(${hiveAmount * RIG_MAX_TILT_DEG}deg)`;
+        if (hiveAmount < RIG_TILT_EPSILON) {
+          // `transform: none` rather than a 3D-identity stack: an unused
+          // perspective()/rotateX() still costs a full matrix computation
+          // every frame even at 0deg, and this is the common case — most of
+          // a visit is spent reading a focused panel, not mid-transition.
+          rigRef.current.style.transform = "none";
+        } else {
+          rigRef.current.style.transform =
+            `perspective(${RIG_PERSPECTIVE}px) ` +
+            `translate3d(0px, 0px, ${hiveAmount * RIG_MAX_RECEDE_Z}px) ` +
+            `rotateX(${hiveAmount * RIG_MAX_TILT_DEG}deg)`;
+        }
 
         // preserve-3d breaks hit testing on descendants in Chromium: clicks
         // inside a focused panel land on the rig instead of the button under
@@ -195,19 +264,20 @@ export default function Scene() {
         // context is only needed while the plane is actually tilted, so drop
         // to flat at focus — at this threshold the tilt is under a fifth of a
         // degree, so nothing changes visually.
-        rigRef.current.style.transformStyle = hiveAmount < 0.02 ? "flat" : "preserve-3d";
+        rigRef.current.style.transformStyle = hiveAmount < RIG_TILT_EPSILON ? "flat" : "preserve-3d";
       }
       if (fogRef.current) {
         fogRef.current.style.opacity = `${hiveAmount * 0.55}`;
       }
 
-      // The traveling signal dots use SMIL animations that run continuously
-      // once mounted, costing a repaint every frame even while invisible.
-      // Only mount them near the zoomed-out hive view where they're seen.
+      // The traveling signal dots use SMIL animations that repaint every frame
+      // while displayed, so they're only shown near the zoomed-out hive view.
+      // Toggled as a DOM attribute rather than React state: mounting/unmounting
+      // them from a re-render landed exactly mid-transition and caused spikes.
       const nearHive = focusAmount < 0.45;
       if (nearHive !== showSignalsRef.current) {
         showSignalsRef.current = nearHive;
-        setShowSignals(nearHive);
+        graphRef.current?.setAttribute("data-signals", nearHive ? "on" : "off");
       }
 
       if (cam.activeIndex !== activeIndexRef.current) {
@@ -264,11 +334,11 @@ export default function Scene() {
     };
     window.addEventListener("nav-node", onNavRequest);
 
-    applyCamera(0);
+    applyCamera(0, undefined, true);
 
     const onResize = () => {
       baseScale = Math.min(window.innerWidth / NODE_W, MAX_BASE_SCALE);
-      applyCamera(renderProgressRef.current);
+      applyCamera(renderProgressRef.current, undefined, true);
       ScrollTrigger.refresh();
     };
     window.addEventListener("resize", onResize);
@@ -281,7 +351,10 @@ export default function Scene() {
       jumpTweenRef.current?.kill();
       trigger.kill();
     };
-  }, []);
+    // lowPowerMode is set once via a lazy useState initializer and never
+    // changes again, so listing it here doesn't cause the effect to re-run —
+    // it just satisfies the closure check.
+  }, [lowPowerMode]);
 
   useEffect(() => {
     const bootTime = Date.now();
@@ -363,7 +436,7 @@ export default function Scene() {
                 </div>
               );
             })}
-            <GraphLayer ref={graphRef} activeIndex={activeIndex} showSignals={showSignals} />
+            <GraphLayer ref={graphRef} activeIndex={activeIndex} />
           </div>
         </div>
 

@@ -391,6 +391,13 @@ body {
   fill: var(--accent);
 }
 
+/* Toggled by the camera loop (no React state): display:none stops the SMIL
+   animations painting while the hive view is out of sight, without the
+   mount/unmount churn that used to land right mid-transition. */
+.graph-layer[data-signals="off"] .signal-dot {
+  display: none;
+}
+
 .deco-node {
   fill: var(--accent);
   opacity: 0.4;
