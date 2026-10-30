@@ -98,6 +98,7 @@
   height: 46px;
   padding: 0 max(calc(var(--m-pad) - 10px), env(safe-area-inset-left, 0px));
   overflow-x: auto;
+  overflow-y: hidden;
   overscroll-behavior-x: contain;
   scroll-snap-type: x proximity;
   scrollbar-width: none;
@@ -234,12 +235,10 @@
 .m-root .panel--hero {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: stretch;
-  min-height: calc(100vh - var(--m-bar-h));
-  min-height: calc(100svh - var(--m-bar-h) - env(safe-area-inset-top, 0px));
-  padding-top: 28px;
-  padding-bottom: 28px;
+  padding-top: 32px;
+  padding-bottom: 12px;
   overflow: hidden;
 }
 
@@ -285,20 +284,16 @@
   line-height: 1.7;
 }
 
-/* The network becomes an in-flow band under the intro, bleeding to the
-   screen edges and fading out at its top and bottom. */
+/* The network becomes an in-flow, full-bleed band under the intro.
+   NeuralNet switches to its "band" layout in the linear scene: centred and
+   scaled to fill this strip. */
 .m-root .panel--hero .netviz {
   position: relative;
   inset: auto;
   flex: none;
-  height: clamp(190px, 32vh, 280px);
-  /* The canvas draws its network toward the right of its box (it was built
-     to sit beside the desktop hero text), so the band extends off-screen to
-     the left to bring the network to the centre of a phone. */
-  margin: 14px calc(-1 * var(--m-pad)) 0 calc(-1 * var(--m-pad) - 42vw);
+  height: clamp(210px, 58vw, 300px);
+  margin: 10px calc(-1 * var(--m-pad)) 0;
   pointer-events: none;
-  -webkit-mask-image: linear-gradient(180deg, transparent, #000 22%, #000 78%, transparent);
-  mask-image: linear-gradient(180deg, transparent, #000 22%, #000 78%, transparent);
 }
 
 /* "Scroll to zoom out" only means something in the camera scene. */
@@ -362,10 +357,14 @@
 }
 
 /* Horizontal scrollers: filter bars and tab bars scroll instead of wrapping. */
+/* overflow-y must be explicit: with overflow-x:auto alone the y axis
+   computes to auto too, and the 1px tab/border overhangs made every strip
+   scrollable up and down under a finger. */
 .m-root .repo-bar,
 .m-root .term-bar {
   flex-wrap: nowrap;
   overflow-x: auto;
+  overflow-y: hidden;
   overscroll-behavior-x: contain;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
@@ -396,6 +395,12 @@
 .m-root .term-add,
 .m-root .screen-jump {
   flex: none;
+}
+
+/* Desktop tabs hang 1px over the bar border to merge with it; inside a
+   horizontal scroller that overhang is vertical overflow, so drop it. */
+.m-root .term-tab {
+  margin-bottom: 0;
 }
 
 .m-root .term-tab-name {
@@ -857,10 +862,18 @@
 }
 
 @media (max-height: 500px) {
-  .m-root .panel--hero {
-    min-height: 0;
-    padding-top: 28px;
-    padding-bottom: 36px;
+  /* Too short to sit beside the name: back to an in-flow band under it. */
+  .m-root .panel--hero .netviz {
+    position: relative;
+    inset: auto;
+    height: 240px;
+    margin: 10px calc(-1 * var(--m-pad)) 0;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  .m-root .hero-main {
+    max-width: none;
   }
 }
 
