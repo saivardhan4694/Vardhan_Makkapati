@@ -255,6 +255,10 @@ function NeuralNet() {
 
     const { neurons, edges, layerStart } = buildNetwork();
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // Touch-first devices (phones, tablets) run the animation at 30fps: it is
+    // decorative, and halving its frame cost is the single biggest win for
+    // scrolling smoothness there. Mouse/trackpad devices are unaffected.
+    const minFrameMs = window.matchMedia("(pointer: coarse)").matches ? 1000 / 30 : 0;
 
     // Pre-rendered glow sprite. Canvas shadowBlur gives the same look but
     // re-rasterizes a blur per shape per frame — with ~20 neurons firing that
@@ -410,6 +414,7 @@ function NeuralNet() {
 
     const draw = (now: number) => {
       raf = requestAnimationFrame(draw);
+      if (minFrameMs && now - last < minFrameMs - 2) return;
       const dt = Math.min(now - last, 64);
       last = now;
       if (!visible || cssW === 0) return;

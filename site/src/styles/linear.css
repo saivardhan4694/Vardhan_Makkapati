@@ -1,0 +1,885 @@
+/* ================================================================ */
+/* Linear layout (phones, tablets, small windows)                    */
+/* Everything here is scoped under .m-root, which only exists in      */
+/* LinearScene — the desktop camera scene is untouched by this file.  */
+/* ================================================================ */
+
+.m-root {
+  --m-pad: 16px;
+  --m-bar-h: 92px;
+  position: relative;
+  min-height: 100vh;
+  min-height: 100svh;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Same faint scanline texture as the desktop chrome, fixed to the screen. */
+.m-scan {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.22;
+  background: repeating-linear-gradient(
+    rgba(199, 255, 47, 0.035) 0px,
+    rgba(199, 255, 47, 0.035) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+/* ---------------------------------------------------------------- */
+/* Sticky bar + tab strip                                            */
+/* ---------------------------------------------------------------- */
+
+.m-bar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  padding-top: env(safe-area-inset-top, 0px);
+  background: linear-gradient(180deg, rgba(17, 20, 26, 0.98), rgba(17, 20, 26, 0.94));
+  border-bottom: 1px solid var(--border);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+.m-bar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 44px;
+  padding: 0 max(var(--m-pad), env(safe-area-inset-right, 0px)) 0 max(var(--m-pad), env(safe-area-inset-left, 0px));
+}
+
+.m-brand {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--text);
+  background: none;
+  border: 0;
+  padding: 0;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.m-bar-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--text-dimmer);
+  font-variant-numeric: tabular-nums;
+}
+
+.m-led {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(199, 255, 47, 0.7);
+  animation: m-led 2.4s ease-in-out infinite;
+}
+
+@keyframes m-led {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.m-tabs {
+  display: flex;
+  gap: 4px;
+  height: 46px;
+  padding: 0 max(calc(var(--m-pad) - 10px), env(safe-area-inset-left, 0px));
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  /* Soft fade at the right edge hints that the strip scrolls. */
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+}
+
+.m-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.m-tab {
+  position: relative;
+  flex: none;
+  min-width: 44px;
+  height: 46px;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--text-dimmer);
+  background: none;
+  border: 0;
+  scroll-snap-align: center;
+  cursor: pointer;
+  transition: color 180ms ease;
+}
+
+.m-tab--active {
+  color: var(--text);
+}
+
+.m-tab--active::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 0;
+  height: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(199, 255, 47, 0.6);
+}
+
+.m-tab:focus-visible,
+.m-brand:focus-visible,
+.m-top:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: -3px;
+}
+
+/* ---------------------------------------------------------------- */
+/* Sections + reveal                                                 */
+/* ---------------------------------------------------------------- */
+
+.m-main {
+  position: relative;
+  z-index: 1;
+}
+
+.m-section {
+  position: relative;
+  scroll-margin-top: calc(var(--m-bar-h) + env(safe-area-inset-top, 0px));
+  border-top: 1px solid var(--border);
+}
+
+/* The rise is applied to the panel, not the section: scrollIntoView measures
+   the section box, so transforming it would make tab jumps land short. */
+.m-section > .panel {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 600ms cubic-bezier(0.2, 0.7, 0.2, 1),
+    transform 600ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.m-section--hero {
+  border-top: 0;
+}
+
+.m-section.is-revealed > .panel {
+  opacity: 1;
+  transform: none;
+}
+
+/* Kicker "types" itself in as the section arrives. */
+.m-section .panel-kicker {
+  display: inline-block;
+  clip-path: inset(0 100% 0 0);
+}
+
+.m-section.is-revealed .panel-kicker {
+  animation: m-type 700ms steps(22, end) 120ms forwards;
+}
+
+@keyframes m-type {
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* Panels lose their fixed 1440x900 frame and become ordinary blocks. */
+.m-root .panel {
+  width: auto;
+  height: auto;
+  padding: 36px max(var(--m-pad), env(safe-area-inset-right, 0px)) 40px
+    max(var(--m-pad), env(safe-area-inset-left, 0px));
+  background: transparent;
+}
+
+.m-root .panel--about,
+.m-root .panel--skills,
+.m-root .panel--projects,
+.m-root .panel--education,
+.m-root .panel--ping {
+  padding-top: 36px;
+}
+
+.m-root .panel-kicker,
+.m-root .panel-kicker-row {
+  font-size: 12px;
+}
+
+.m-root .panel-kicker-row {
+  align-items: baseline;
+  gap: 12px;
+}
+
+/* ---------------------------------------------------------------- */
+/* WHOAMI                                                            */
+/* ---------------------------------------------------------------- */
+
+.m-root .panel--hero {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+  min-height: calc(100vh - var(--m-bar-h));
+  min-height: calc(100svh - var(--m-bar-h) - env(safe-area-inset-top, 0px));
+  padding-top: 28px;
+  padding-bottom: 28px;
+  overflow: hidden;
+}
+
+.m-root .hero-kicker {
+  font-size: 12px;
+}
+
+.m-root .hero-title-first {
+  font-size: clamp(26px, 8.4vw, 44px);
+}
+
+.m-root .hero-title-last {
+  font-size: clamp(44px, 14.6vw, 76px);
+}
+
+.m-root .hero-role {
+  margin-top: 16px;
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.m-root .hero-sub {
+  margin-top: 18px;
+  font-size: 13.5px;
+  line-height: 1.65;
+}
+
+.m-root .hero-status {
+  margin-top: 22px;
+}
+
+.m-root .hero-status-row {
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+
+.m-root .hero-status-key {
+  font-size: 11px;
+}
+
+.m-root .hero-status-skills {
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+/* The network becomes an in-flow band under the intro, bleeding to the
+   screen edges and fading out at its top and bottom. */
+.m-root .panel--hero .netviz {
+  position: relative;
+  inset: auto;
+  flex: none;
+  height: clamp(190px, 32vh, 280px);
+  /* The canvas draws its network toward the right of its box (it was built
+     to sit beside the desktop hero text), so the band extends off-screen to
+     the left to bring the network to the centre of a phone. */
+  margin: 14px calc(-1 * var(--m-pad)) 0 calc(-1 * var(--m-pad) - 42vw);
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(180deg, transparent, #000 22%, #000 78%, transparent);
+  mask-image: linear-gradient(180deg, transparent, #000 22%, #000 78%, transparent);
+}
+
+/* "Scroll to zoom out" only means something in the camera scene. */
+.m-root .hero-hint {
+  display: none;
+}
+
+/* ---------------------------------------------------------------- */
+/* Shared terminal pieces                                            */
+/* ---------------------------------------------------------------- */
+
+.m-root .screen-top {
+  grid-template-columns: 1fr;
+  gap: 18px;
+}
+
+.m-root .screen-intro-label {
+  font-size: 12px;
+}
+
+.m-root .screen-intro p {
+  font-size: 14px;
+  line-height: 1.7;
+  max-width: none;
+}
+
+.m-root .screen-id {
+  font-size: 13px;
+}
+
+.m-root .screen-id-row {
+  gap: 12px;
+}
+
+.m-root .box--status-line {
+  margin-top: 18px;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  font-size: 12px;
+}
+
+.m-root .status-line-dots {
+  width: 14px;
+}
+
+.m-root .status-line-led {
+  display: none;
+}
+
+.m-root .term-prompt {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.m-root .screen-chip {
+  font-size: 12px;
+}
+
+.m-root .screen-chip--sm {
+  font-size: 11.5px;
+}
+
+/* Horizontal scrollers: filter bars and tab bars scroll instead of wrapping. */
+.m-root .repo-bar,
+.m-root .term-bar {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.m-root .repo-bar::-webkit-scrollbar,
+.m-root .term-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.m-root .repo-dir {
+  flex: none;
+  min-height: 44px;
+  align-items: center;
+  font-size: 13px;
+  padding: 0 12px;
+}
+
+.m-root .repo-dir-count {
+  font-size: 11px;
+}
+
+/* ---------------------------------------------------------------- */
+/* PROFILE                                                           */
+/* ---------------------------------------------------------------- */
+
+.m-root .term-tab,
+.m-root .term-add,
+.m-root .screen-jump {
+  flex: none;
+}
+
+.m-root .term-tab-name {
+  min-height: 44px;
+  font-size: 12.5px;
+  padding: 0 4px 0 12px;
+}
+
+.m-root .term-tab-close {
+  min-width: 36px;
+  min-height: 44px;
+  font-size: 15px;
+}
+
+.m-root .term-add {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.m-root .screen-jump {
+  min-height: 36px;
+  margin: 4px 0 4px 8px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.m-root .term-body {
+  height: auto;
+  padding: 14px 14px 18px;
+}
+
+.m-root .screen-row {
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.m-root .screen-row-when {
+  font-size: 12px;
+}
+
+.m-root .screen-row-title,
+.m-root .screen-row-note {
+  font-size: 13.5px;
+}
+
+.m-root .screen-tag {
+  font-size: 11px;
+}
+
+.m-root .screen-skills {
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.m-root .screen-group-label {
+  font-size: 12px;
+}
+
+/* ---------------------------------------------------------------- */
+/* STACK                                                             */
+/* ---------------------------------------------------------------- */
+
+.m-root .stack-browser .repo-bar {
+  flex-wrap: nowrap;
+}
+
+.m-root .stack-browser .term-prompt--sm {
+  padding: 12px 14px 0;
+}
+
+.m-root .stack-grid {
+  height: auto;
+  overflow: visible;
+  padding: 14px 14px 16px;
+  gap: 20px;
+}
+
+.m-root .stack-cat-head {
+  row-gap: 0;
+}
+
+.m-root .stack-cat-label {
+  font-size: 12.5px;
+}
+
+.m-root .stack-evidence {
+  min-height: 44px;
+  font-size: 12px;
+}
+
+/* ---------------------------------------------------------------- */
+/* BUILDS (accordion, rendered by ProjectsLinear)                   */
+/* ---------------------------------------------------------------- */
+
+.m-repo-prompt {
+  padding: 12px 14px 4px;
+  margin-bottom: 0;
+}
+
+.m-repos {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0 6px;
+}
+
+.m-repo {
+  border-top: 1px solid var(--border);
+}
+
+.m-repo:first-child {
+  border-top: 0;
+}
+
+.m-repo-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 14px;
+  font: inherit;
+  text-align: left;
+  color: var(--text-dim);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.m-repo--open .m-repo-row {
+  color: var(--text);
+  background: rgba(199, 255, 47, 0.05);
+}
+
+.m-repo-row .repo-caret {
+  color: var(--accent);
+  width: 10px;
+}
+
+.m-repo-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.m-repo-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.m-repo-title .repo-star {
+  margin-left: 0;
+  font-size: 11px;
+  color: var(--accent);
+}
+
+.m-repo-id {
+  font-size: 11.5px;
+  color: var(--text-dimmer);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.m-repo-row .repo-year {
+  flex: none;
+  font-size: 11.5px;
+}
+
+.m-repo-detail {
+  padding: 4px 14px 18px 34px;
+  animation: m-expand 260ms ease both;
+}
+
+@keyframes m-expand {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.m-root .m-repo-detail .repo-blurb {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+.m-root .m-repo-detail .repo-points {
+  margin: 14px 0 0;
+}
+
+.m-root .m-repo-detail .repo-points li {
+  font-size: 13px;
+}
+
+.m-root .m-repo-detail .repo-open {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-top: 16px;
+  font-size: 12.5px;
+}
+
+.m-repo-gh {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+/* ---------------------------------------------------------------- */
+/* TRAINING                                                          */
+/* ---------------------------------------------------------------- */
+
+.m-root .edu-combo {
+  grid-template-columns: 1fr;
+}
+
+.m-root .edu-combo-col {
+  padding: 14px;
+}
+
+.m-root .edu-combo-col:first-child {
+  border-right: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.m-root .edu-t-row {
+  grid-template-columns: 46px 1fr;
+}
+
+.m-root .edu-t-stage {
+  font-size: 11px;
+}
+
+.m-root .edu-t-title {
+  font-size: 13.5px;
+}
+
+.m-root .edu-t-org {
+  font-size: 13px;
+}
+
+.m-root .edu-t-score {
+  font-size: 12px;
+}
+
+.m-root .edu-certs {
+  height: auto;
+  overflow: visible;
+  padding-right: 0;
+}
+
+.m-root .edu-cert-row {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 10px 2px;
+  font-size: 13px;
+}
+
+.m-root .edu-cert-issuer {
+  font-size: 12px;
+  text-align: left;
+}
+
+.m-more {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 8px;
+  padding: 0 2px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--accent);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.m-more::before {
+  content: "$";
+  margin-right: 8px;
+  color: var(--text-dimmer);
+}
+
+/* ---------------------------------------------------------------- */
+/* PING                                                              */
+/* ---------------------------------------------------------------- */
+
+.m-root .ping-row {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  min-height: 56px;
+  padding: 8px 4px;
+  font-size: 13.5px;
+}
+
+.m-root .ping-seq,
+.m-root .ping-latency,
+.m-root .ping-ttl {
+  display: none;
+}
+
+.m-root .ping-verb {
+  font-size: 12px;
+  padding: 6px 10px;
+}
+
+.m-root .ping-summary {
+  font-size: 12px;
+}
+
+/* ---------------------------------------------------------------- */
+/* Footer                                                            */
+/* ---------------------------------------------------------------- */
+
+.m-footer {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px max(var(--m-pad), env(safe-area-inset-right, 0px))
+    calc(18px + env(safe-area-inset-bottom, 0px)) max(var(--m-pad), env(safe-area-inset-left, 0px));
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--text-dimmer);
+}
+
+.m-top {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 12px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--accent);
+  background: none;
+  border: 1px solid var(--border-strong);
+  cursor: pointer;
+}
+
+/* ---------------------------------------------------------------- */
+/* Wider linear screens (tablets, small laptop windows)              */
+/* ---------------------------------------------------------------- */
+
+@media (min-width: 700px) {
+  .m-root {
+    --m-pad: 40px;
+  }
+
+  .m-root .panel {
+    max-width: 920px;
+    margin: 0 auto;
+  }
+
+  .m-root .screen-top {
+    grid-template-columns: 1.5fr 1fr;
+    gap: 28px;
+  }
+
+  .m-root .screen-row {
+    grid-template-columns: 150px 1fr;
+    gap: 18px;
+  }
+
+  .m-root .screen-skills {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .m-root .edu-combo {
+    grid-template-columns: 1.2fr 1fr;
+  }
+
+  .m-root .edu-combo-col:first-child {
+    border-right: 1px solid var(--border);
+    border-bottom: 0;
+  }
+
+  .m-root .ping-row {
+    grid-template-columns: 58px 1fr 100px;
+  }
+
+  .m-root .ping-seq {
+    display: block;
+  }
+
+  .m-root .panel--hero .netviz {
+    position: absolute;
+    inset: 0 0 0 40%;
+    height: auto;
+    margin: 0;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 30%);
+    mask-image: linear-gradient(90deg, transparent, #000 30%);
+  }
+
+  .m-root .panel--hero {
+    min-height: 0;
+    padding-top: 88px;
+    padding-bottom: 88px;
+  }
+
+  .m-root .hero-main {
+    max-width: 68%;
+  }
+
+  .m-root .hero-title-last {
+    font-size: clamp(44px, 9vw, 76px);
+  }
+
+  .m-tabs {
+    justify-content: center;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}
+
+/* Landscape phones: short viewport — brand and tabs share one row, and no
+   full-height hero. */
+@media (min-width: 640px) and (max-height: 500px) {
+  .m-root {
+    --m-bar-h: 47px;
+  }
+
+  .m-bar {
+    display: flex;
+    align-items: center;
+  }
+
+  .m-bar-top {
+    flex: none;
+  }
+
+  .m-bar-status {
+    display: none;
+  }
+
+  .m-tabs {
+    flex: 1;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-height: 500px) {
+  .m-root .panel--hero {
+    min-height: 0;
+    padding-top: 28px;
+    padding-bottom: 36px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .m-section > .panel,
+  .m-section.is-revealed > .panel {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .m-section .panel-kicker,
+  .m-section.is-revealed .panel-kicker {
+    clip-path: none;
+    animation: none;
+  }
+
+  .m-led,
+  .m-repo-detail {
+    animation: none;
+  }
+}

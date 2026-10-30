@@ -6,10 +6,18 @@ import {
   type Project,
   type ProjectCategory,
 } from "../../data/projects";
+import { useIsLinear } from "../../lib/layoutMode";
 
 type Filter = ProjectCategory | "all";
 
 function Projects() {
+  // The linear (mobile/tablet) layout gets an accordion instead of the
+  // fixed-height two-pane browser; the camera layout is untouched.
+  const linear = useIsLinear();
+  return linear ? <ProjectsLinear /> : <ProjectsBrowser />;
+}
+
+function ProjectsBrowser() {
   const [filter, setFilter] = useState<Filter>("all");
   const [selectedId, setSelectedId] = useState<string>(
     PROJECTS.find((p) => p.flagship)?.id ?? PROJECTS[0].id
@@ -180,6 +188,108 @@ function Projects() {
           <span className="accent">{selected.id}</span>
         </div>
         <span className="status-line-led" />
+      </div>
+    </div>
+  );
+}
+
+function ProjectsLinear() {
+  const [filter, setFilter] = useState<Filter>("all");
+  const [openId, setOpenId] = useState<string | null>(PROJECTS.find((p) => p.flagship)?.id ?? null);
+
+  const visible = useMemo(
+    () => (filter === "all" ? PROJECTS : PROJECTS.filter((p) => p.category === filter)),
+    [filter]
+  );
+
+  return (
+    <div className="panel panel--projects">
+      <div className="panel-kicker-row">
+        <div className="panel-kicker">&gt; BUILDS — REPO[]</div>
+        <div className="panel-kicker-dim">
+          {String(visible.length).padStart(2, "0")}/{String(PROJECT_COUNT).padStart(2, "0")}
+        </div>
+      </div>
+
+      <div className="box repo-browser">
+        <div className="repo-bar">
+          {CATEGORIES.map((c) => {
+            const n = c.id === "all" ? PROJECT_COUNT : PROJECTS.filter((p) => p.category === c.id).length;
+            return (
+              <button
+                key={c.id}
+                type="button"
+                className={c.id === filter ? "repo-dir repo-dir--active" : "repo-dir"}
+                aria-pressed={c.id === filter}
+                onClick={() => setFilter(c.id)}
+              >
+                {c.label}
+                <span className="repo-dir-count">{n}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="term-prompt term-prompt--sm m-repo-prompt">
+          <span className="term-user">visitor@portfolio</span>
+          <span className="term-path">:~/builds$</span> ls {filter === "all" ? "" : filter + "/"}
+        </div>
+
+        <ul className="m-repos">
+          {visible.map((p) => {
+            const open = p.id === openId;
+            return (
+              <li key={p.id} className={open ? "m-repo m-repo--open" : "m-repo"}>
+                <button
+                  type="button"
+                  className="m-repo-row"
+                  aria-expanded={open}
+                  aria-controls={`repo-${p.id}`}
+                  onClick={() => setOpenId(open ? null : p.id)}
+                >
+                  <span className="repo-caret">{open ? "▾" : "▸"}</span>
+                  <span className="m-repo-text">
+                    <span className="m-repo-title">
+                      {p.title}
+                      {p.flagship && <span className="repo-star">★</span>}
+                    </span>
+                    <span className="m-repo-id">
+                      {p.category}/{p.id}
+                    </span>
+                  </span>
+                  <span className="repo-year">{p.year}</span>
+                </button>
+                {open && (
+                  <div className="m-repo-detail" id={`repo-${p.id}`}>
+                    <p className="repo-blurb">{p.blurb}</p>
+                    <div className="repo-stack">
+                      {p.stack.map((s) => (
+                        <span className="screen-chip screen-chip--sm" key={s}>
+                          {s}
+                        </span>
+                      ))}
+                    </div>
+                    <ul className="repo-points">
+                      {p.highlights.map((h) => (
+                        <li key={h}>
+                          <span className="repo-bullet">+</span>
+                          {h}
+                        </li>
+                      ))}
+                    </ul>
+                    <a className="repo-open" href={p.url} target="_blank" rel="noopener noreferrer">
+                      OPEN REPO →
+                    </a>
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+
+        <a className="m-repo-gh" href="https://github.com/saivardhan4694" target="_blank" rel="noopener noreferrer">
+          ALL REPOS ON GITHUB →
+        </a>
       </div>
     </div>
   );
