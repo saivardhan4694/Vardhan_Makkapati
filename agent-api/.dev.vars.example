@@ -1,0 +1,11 @@
+# Copy to .dev.vars for `wrangler dev` (never commit .dev.vars).
+# In production these are set with `npx wrangler secret put <NAME>`.
+GEMINI_API_KEY=your-gemini-api-key
+# Optional: only needed to actually deliver contact handoffs.
+RESEND_API_KEY=
+# Optional: random string; makes rate-limit IP hashes unguessable.
+IP_HASH_SALT=
+# Optional: enables Cloudflare Turnstile verification when set.
+TURNSTILE_SECRET=
+# Uncomment to run without any API key (canned streamed responses).
+# MOCK_LLM=1

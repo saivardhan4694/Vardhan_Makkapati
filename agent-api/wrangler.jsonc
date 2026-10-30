@@ -1,0 +1,39 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "portfolio-agent-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "observability": { "enabled": true },
+
+  // One SQLite-backed Durable Object holds every counter (rate limits,
+  // global daily budget) and pending contact handoffs. SQLite-backed DOs are
+  // available on the Workers Free plan. See README "Why a Durable Object".
+  "durable_objects": {
+    "bindings": [{ "name": "LIMITER", "class_name": "Limiter" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Limiter"] }],
+
+  // Non-secret configuration. Secrets (GEMINI_API_KEY, RESEND_API_KEY,
+  // optional TURNSTILE_SECRET, IP_HASH_SALT) are set with `wrangler secret put`.
+  "vars": {
+    "GEMINI_MODEL": "gemini-3.8-flash",
+    "THINKING_LEVEL": "low",
+    "ALLOWED_ORIGINS": "https://saivardhan4694.github.io,http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173",
+    "AGENT_ENABLED": "1",
+    "MOCK_LLM": "0",
+    "CONTACT_TO": "makkapatimrk@gmail.com",
+    "CONTACT_FROM": "Portfolio Agent <onboarding@resend.dev>",
+    "MAX_INPUT_CHARS": "500",
+    "MAX_OUTPUT_TOKENS": "400",
+    "THINKING_TOKEN_HEADROOM": "600",
+    "MAX_TURNS": "12",
+    "HISTORY_WINDOW": "6",
+    "RATE_SHORT_LIMIT": "8",
+    "RATE_SHORT_WINDOW_SEC": "600",
+    "RATE_DAILY_LIMIT": "30",
+    "GLOBAL_DAILY_CAP": "100",
+    "CONTACT_DAILY_LIMIT": "3",
+    "CONTACT_GLOBAL_DAILY_CAP": "40",
+    "UPSTREAM_TIMEOUT_MS": "20000"
+  }
+}

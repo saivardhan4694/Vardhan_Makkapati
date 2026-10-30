@@ -1,0 +1,38 @@
+name: Agent API tests
+
+# Deterministic checks only — no API keys, no model calls, no deploy.
+on:
+  push:
+    branches: [main, "claude/**"]
+    paths: ["agent-api/**", "site/src/data/**", ".github/workflows/agent-tests.yml"]
+  pull_request:
+    paths: ["agent-api/**", "site/src/data/**", ".github/workflows/agent-tests.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: agent-api
+    steps:
+      - uses: actions/checkout@v4
+
+      # Node >= 22.18 runs the TypeScript tests and knowledge compiler natively.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: agent-api/package-lock.json
+
+      # Scripts skipped: tests don't need the workerd/esbuild binaries.
+      - run: npm ci --ignore-scripts
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests + knowledge drift check
+        run: npm test

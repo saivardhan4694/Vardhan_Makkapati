@@ -1,0 +1,31 @@
+{
+  "name": "portfolio-agent-api",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "knowledge": "node scripts/build-knowledge.ts",
+    "knowledge:check": "node scripts/build-knowledge.ts --check",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run knowledge:check && node --test test/*.test.ts",
+    "predev": "npm run knowledge",
+    "dev": "wrangler dev",
+    "dev:mock": "npm run knowledge && wrangler dev --var MOCK_LLM:1",
+    "predeploy": "npm run knowledge && npm run typecheck && node --test test/*.test.ts",
+    "deploy": "wrangler deploy",
+    "eval": "node evals/run-evals.ts"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261030.1",
+    "@types/node": "^24.19.2",
+    "typescript": "~6.0.2",
+    "wrangler": "^4.156.0"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true,
+    "workerd@1.20261023.1": true
+  }
+}
