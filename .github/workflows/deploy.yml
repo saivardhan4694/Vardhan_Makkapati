@@ -33,6 +33,10 @@ jobs:
       - name: Build
         working-directory: site
         run: npm run build
+        env:
+          # Portfolio agent (agent-api/). Inert when unset: the UI hides itself.
+          VITE_AGENT_API_URL: ${{ vars.VITE_AGENT_API_URL }}
+          VITE_TURNSTILE_SITE_KEY: ${{ vars.VITE_TURNSTILE_SITE_KEY }}
 
       - uses: actions/configure-pages@v5
 
