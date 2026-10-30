@@ -1,6 +1,7 @@
 import { memo, useState } from "react";
 import { goToNode } from "../../lib/navNode";
 import { PROJECTS as ALL_PROJECTS } from "../../data/projects";
+import { CURRENT_COMPANY, CURRENT_ROLE } from "../../data/highlights";
 
 const STATUS_ITEMS = [
   { label: "ROLE", value: "AGENTIC AI DEVELOPER" },
@@ -19,10 +20,10 @@ const EXPERIENCE = [
     current: false,
   },
   {
-    period: "NOW",
-    role: "Open to new roles",
-    org: "OPEN_TO_WORK",
-    note: "Building agentic AI systems independently while looking for the next full-time opportunity.",
+    period: "MAR 2026 — NOW",
+    role: CURRENT_ROLE,
+    org: CURRENT_COMPANY,
+    note: "Building and shipping AI systems as an AI engineer.",
     stack: [],
     current: true,
   },
