@@ -6,7 +6,7 @@
 
 export const ROLE_TITLE = "AGENTIC_AI_ENGINEER";
 export const ROLE_TAGLINE = "Designing & shipping autonomous LLM agents";
-export const CURRENT_COMPANY = "[YOUR_COMPANY]";
+export const CURRENT_COMPANY = "Ideyalabs";
 export const CURRENT_ROLE = "AI Engineer";
 
 export const TOP_SKILLS = ["PYTHON", "PYTORCH", "LLMS / RAG", "C++ / CUDA", "AWS / GCP", "DOCKER / K8S"];

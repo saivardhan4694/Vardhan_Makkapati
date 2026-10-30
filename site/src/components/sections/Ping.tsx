@@ -17,7 +17,7 @@ interface Channel {
 
 // `href: null` renders the row as a placeholder — visible, in-theme, but not
 // a live link — the same convention the other pages use for unfilled details
-// like [YOUR_COMPANY]. Only entries with a real destination are clickable.
+// like the unfilled resume link. Only entries with a real destination are clickable.
 const CHANNELS: Channel[] = [
   {
     id: "EMAIL",
