@@ -1,54 +1,10 @@
 import { memo } from "react";
-
-const STATUS_ITEMS = [
-  { label: "DEGREE", value: "B.TECH — AI & ML" },
-  { label: "GRADUATING", value: "2025" },
-  { label: "FOCUS", value: "GENERATIVE AI / AGENTS" },
-  { label: "CERTS_LOGGED", value: "13", accent: true },
-];
-
-const TIMELINE = [
-  {
-    year: "2025",
-    stage: "B.TECH",
-    title: "Artificial Intelligence & Machine Learning",
-    org: "M.S. Ramaiah University of Applied Sciences",
-    place: "Bengaluru",
-    score: "2021 — 2025",
-  },
-  {
-    year: "2021",
-    stage: "INTERMEDIATE",
-    title: "MPC — Maths, Physics, Chemistry",
-    org: "Sri Chaitanya Junior College, iCON Campus",
-    place: "Lakshmipuram, Guntur",
-    score: "92% · BIE Andhra Pradesh",
-  },
-  {
-    year: "2019",
-    stage: "SECONDARY",
-    title: "10th Grade",
-    org: "Dr. KKR Gowtham High School",
-    place: "Guntur",
-    score: "9.8 / 10 CGPA · AP State Board",
-  },
-];
-
-const CERTIFICATIONS = [
-  { name: "Introduction to Generative AI", issuer: "Google Cloud" },
-  { name: "Large Language Models & Transformers", issuer: "Google Cloud" },
-  { name: "AI Fluency Course", issuer: "Anthropic" },
-  { name: "AI Fundamentals & Prompt Writing", issuer: "IBM SkillsBuild" },
-  { name: "Career Essentials in Generative AI", issuer: "Microsoft / LinkedIn" },
-  { name: "Generative AI Studio", issuer: "Simplilearn" },
-  { name: "Generative AI for Beginners", issuer: "Great Learning" },
-  { name: "LangChain Basics for Beginners", issuer: "Great Learning" },
-  { name: "Retrieval-Augmented Generation (RAG)", issuer: "Great Learning" },
-  { name: "Artificial Intelligence A-Z 2024", issuer: "Udemy — Hadelin de Ponteves" },
-  { name: "Machine Learning A-Z 2024", issuer: "Udemy — Hadelin de Ponteves" },
-  { name: "Python for Data Science & ML", issuer: "Udemy — Jose Portilla" },
-  { name: "100 Days of Code", issuer: "Udemy — Angela Yu" },
-];
+import {
+  CERTIFICATIONS,
+  TIMELINE,
+  TRAINING_INTRO,
+  TRAINING_STATUS as STATUS_ITEMS,
+} from "../../data/profile";
 
 function Education() {
   return (
@@ -58,12 +14,7 @@ function Education() {
       <div className="screen-top">
         <div className="screen-intro">
           <div className="screen-intro-label">TRAINING_LOG</div>
-          <p>
-            The degree is the formal record. Most of what I actually use day
-            to day — LangChain, agent frameworks, RAG, fine-tuning — came from
-            deliberately training on it after: courses, labs, and building
-            with it until it held up.
-          </p>
+          <p>{TRAINING_INTRO}</p>
         </div>
 
         <div className="box screen-id">

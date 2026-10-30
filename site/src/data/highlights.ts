@@ -4,6 +4,9 @@
 // carries percentages and descriptions) since this is a deliberately
 // trimmed-down highlight reel, not a duplicate of it.
 
+export const OWNER_FIRST_NAME = "SAI VARDHAN";
+export const OWNER_LAST_NAME = "MAKKAPATI";
+
 export const ROLE_TITLE = "AGENTIC_AI_ENGINEER";
 export const ROLE_TAGLINE = "Designing & shipping autonomous LLM agents";
 export const CURRENT_COMPANY = "[YOUR_COMPANY]";

@@ -1,4 +1,5 @@
-import { memo, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
+import type { BuildsCommand } from "../../lib/navNode";
 import {
   CATEGORIES,
   PROJECTS,
@@ -31,6 +32,29 @@ function Projects() {
     const list = next === "all" ? PROJECTS : PROJECTS.filter((p) => p.category === next);
     if (!list.some((p) => p.id === selectedId) && list[0]) setSelectedId(list[0].id);
   };
+
+  // External commands (the portfolio agent's filter/open tools) arrive as a
+  // window event so nothing outside needs a handle on this panel's state.
+  useEffect(() => {
+    const onCmd = (e: Event) => {
+      const cmd = (e as CustomEvent<BuildsCommand>).detail ?? {};
+      const target = cmd.open ? PROJECTS.find((p) => p.id === cmd.open) : undefined;
+      const validFilter = CATEGORIES.some((c) => c.id === cmd.filter)
+        ? (cmd.filter as Filter)
+        : undefined;
+      // Opening a repo outside the current filter widens to its category so
+      // the selection is actually visible.
+      const nextFilter: Filter | undefined = validFilter ?? (target ? target.category : undefined);
+      if (nextFilter) setFilter(nextFilter);
+      if (target) setSelectedId(target.id);
+      else if (nextFilter) {
+        const list = nextFilter === "all" ? PROJECTS : PROJECTS.filter((p) => p.category === nextFilter);
+        if (list[0]) setSelectedId(list[0].id);
+      }
+    };
+    window.addEventListener("builds-cmd", onCmd);
+    return () => window.removeEventListener("builds-cmd", onCmd);
+  }, []);
 
   // Up/down walks the list and keeps the highlighted row scrolled into view.
   const onListKey = (e: React.KeyboardEvent) => {

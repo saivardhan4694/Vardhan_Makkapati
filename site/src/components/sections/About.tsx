@@ -1,32 +1,7 @@
 import { memo, useState } from "react";
 import { goToNode } from "../../lib/navNode";
 import { PROJECTS as ALL_PROJECTS } from "../../data/projects";
-
-const STATUS_ITEMS = [
-  { label: "ROLE", value: "AGENTIC AI DEVELOPER" },
-  { label: "DOMAIN", value: "AI / ML SYSTEMS" },
-  { label: "DEGREE", value: "B.TECH" },
-  { label: "AVAILABILITY", value: "● OPEN_TO_WORK", accent: true },
-];
-
-const EXPERIENCE = [
-  {
-    period: "OCT 2024 — JAN 2025",
-    role: "GenAI Engineer Intern",
-    org: "Main Flow Services and Technologies",
-    note: "Built and deployed an AWS-hosted autonomous LLM interview platform — resume/JD matching, a two-stage LLM screening pipeline, and rubric-driven candidate evaluation.",
-    stack: ["AWS", "LangChain", "HuggingFace", "EC2 / Lambda"],
-    current: false,
-  },
-  {
-    period: "NOW",
-    role: "Open to new roles",
-    org: "OPEN_TO_WORK",
-    note: "Building agentic AI systems independently while looking for the next full-time opportunity.",
-    stack: [],
-    current: true,
-  },
-];
+import { ABOUT_PARAGRAPHS, ABOUT_STATUS as STATUS_ITEMS, EXPERIENCE } from "../../data/profile";
 
 const SKILL_GROUPS = [
   {
@@ -146,16 +121,9 @@ function About() {
       <div className="screen-top">
         <div className="screen-intro">
           <div className="screen-intro-label">ABOUT_ME</div>
-          <p>
-            I'm an agentic AI developer. I build systems that reason about a
-            goal, pick the right tools, act, and check their own work — not
-            demos that stop at a model call.
-          </p>
-          <p>
-            What keeps me here is the engineering around the model: the loop,
-            the memory, the evaluation. That's where an idea turns into
-            something that actually runs.
-          </p>
+          {ABOUT_PARAGRAPHS.map((p) => (
+            <p key={p}>{p}</p>
+          ))}
         </div>
 
         <div className="box screen-id">

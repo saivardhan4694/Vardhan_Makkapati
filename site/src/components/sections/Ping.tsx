@@ -1,49 +1,5 @@
 import { memo } from "react";
-
-const STATUS_ITEMS = [
-  { label: "STATUS", value: "● ONLINE", accent: true },
-  { label: "AVAILABILITY", value: "OPEN_TO_WORK", accent: true },
-  { label: "LOOKING_FOR", value: "AGENTIC AI / ML ROLES" },
-  { label: "RESPONSE_TIME", value: "< 24H" },
-];
-
-interface Channel {
-  id: string;
-  host: string;
-  href: string | null;
-  verb: string;
-  latency: string;
-}
-
-// `href: null` renders the row as a placeholder — visible, in-theme, but not
-// a live link — the same convention the other pages use for unfilled details
-// like [YOUR_COMPANY]. Only entries with a real destination are clickable.
-const CHANNELS: Channel[] = [
-  {
-    id: "EMAIL",
-    host: "makkapatimrk@gmail.com",
-    href: "mailto:makkapatimrk@gmail.com",
-    verb: "SEND",
-    latency: "0.2ms",
-  },
-  {
-    id: "GITHUB",
-    host: "github.com/saivardhan4694",
-    href: "https://github.com/saivardhan4694",
-    verb: "OPEN",
-    latency: "0.4ms",
-  },
-  {
-    id: "LINKEDIN",
-    host: "linkedin.com/in/makkapatisaivardhan",
-    href: "https://www.linkedin.com/in/makkapatisaivardhan/",
-    verb: "OPEN",
-    latency: "0.6ms",
-  },
-  // Served straight from site/public/ — Vite exposes that directory at the
-  // site root, so this path needs no build step of its own.
-  { id: "RESUME", host: "resume.pdf", href: "./resume.pdf", verb: "GET", latency: "0.8ms" },
-];
+import { CHANNELS, PING_PARAGRAPHS, PING_STATUS as STATUS_ITEMS } from "../../data/profile";
 
 const LIVE_COUNT = CHANNELS.filter((c) => c.href).length;
 
@@ -55,12 +11,9 @@ function Ping() {
       <div className="screen-top">
         <div className="screen-intro">
           <div className="screen-intro-label">REACH_OUT</div>
-          <p>
-            Open to agentic AI and ML engineering roles — building the systems
-            around the model, not just calling one. If that's what you're
-            hiring for, the channels below all reach me.
-          </p>
-          <p>Pick whichever one you'd actually use.</p>
+          {PING_PARAGRAPHS.map((p) => (
+            <p key={p}>{p}</p>
+          ))}
         </div>
 
         <div className="box screen-id">

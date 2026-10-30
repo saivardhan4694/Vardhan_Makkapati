@@ -6,10 +6,12 @@ import {
   CURRENT_ROLE,
   CURRENT_COMPANY,
   TOP_SKILLS,
+  OWNER_FIRST_NAME,
+  OWNER_LAST_NAME,
 } from "../../data/highlights";
 
-const LINE_1 = "SAI VARDHAN";
-const LINE_2 = "MAKKAPATI";
+const LINE_1 = OWNER_FIRST_NAME;
+const LINE_2 = OWNER_LAST_NAME;
 const TOTAL_CHARS = LINE_1.length + LINE_2.length;
 const MS_PER_CHAR = 32;
 
