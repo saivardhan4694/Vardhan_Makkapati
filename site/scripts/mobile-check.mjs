@@ -13,6 +13,9 @@
 //    viewport (except inside intentional horizontal scrollers)
 //  - every visible text node renders at >= 11px
 //  - every visible button/link is a >= 44x44 tap target (inline exempted)
+//  - horizontal strips (tab/filter bars) cannot scroll vertically
+//  - the hero network band spans the screen, the net fills it, and its
+//    layer captions do not overlap
 //  - every tab jumps its section to just below the sticky bar, and the tab
 //    becomes active; the bar never covers the section heading
 // Screenshots go to SHOT_DIR (default ./mobile-shots).
@@ -77,7 +80,16 @@ function inspectViewport({ MIN_FONT, MIN_TAP }) {
       out.smallTaps.push(`${desc(el)} ${Math.round(r.width)}x${Math.round(r.height)} (in strip)`);
     }
   }
-  out.docOverflow = document.documentElement.scrollWidth > vw + 1 ? document.documentElement.scrollWidth : 0;
+  // Horizontal strips (tab bars, filter bars) must never scroll vertically.
+  out.strips = [];
+  for (const el of document.querySelectorAll(".m-root *")) {
+    const cs = getComputedStyle(el);
+    if (cs.overflowX !== "auto" && cs.overflowX !== "scroll") continue;
+    if (el.scrollHeight > el.clientHeight || (cs.overflowY !== "hidden" && cs.overflowY !== "clip")) {
+      out.strips.push(`${desc(el)} overflow-y=${cs.overflowY} scrollH=${el.scrollHeight} clientH=${el.clientHeight}`);
+    }
+  }
+  out.docOverflow =document.documentElement.scrollWidth > vw + 1 ? document.documentElement.scrollWidth : 0;
   return out;
 }
 
@@ -103,7 +115,37 @@ try {
     await page.waitForTimeout(800);
     await page.screenshot({ path: `${SHOTS}/${name}-top.png` });
 
-    const issues = { overflow: [], smallText: [], smallTaps: [] };
+    // Hero network band: full width, net fills the strip, captions don't collide.
+    // It only draws while on screen, so bring it into view first.
+    await page.evaluate(() => document.querySelector(".m-root .netviz")?.scrollIntoView({ block: "center" }));
+    await page.waitForTimeout(1500);
+    const net = await page.evaluate(() => {
+      const el = document.querySelector(".m-root .netviz");
+      if (!el) return null;
+      const r = el.getBoundingClientRect();
+      return { width: r.width, height: r.height, captions: el.dataset.captions ?? "", netWidth: Number(el.dataset.netWidth ?? 0), vw: innerWidth };
+    });
+    if (!net) fail(name, "hero network band missing");
+    else {
+      const wide = name.startsWith("tablet") || net.vw >= 700;
+      if (!wide && net.width < net.vw - 1) fail(name, `network band ${Math.round(net.width)}px narrower than viewport ${net.vw}px`);
+      // The net keeps its proportions (~1.9:1 incl. captions), so a short,
+      // wide band (landscape) is height-limited rather than width-limited.
+      const room = Math.min(net.width, net.height * 1.9);
+      if (net.netWidth < room * 0.45) fail(name, `network only ${net.netWidth}px wide in a ${Math.round(net.width)}x${Math.round(net.height)} band`);
+      const boxes = net.captions.split(",").filter(Boolean).map((s) => s.split(":").map(Number));
+      if (boxes.length !== 4) fail(name, `expected 4 layer captions, got ${boxes.length}`);
+      boxes.sort((a, b) => a[0] - b[0]);
+      for (let i = 1; i < boxes.length; i++) {
+        if (boxes[i][0] < boxes[i - 1][1] + 3) fail(name, `layer captions overlap: ${net.captions}`);
+      }
+      for (const [l, r] of boxes) if (l < 0 || r > net.width) fail(name, `caption outside band: ${net.captions}`);
+    }
+
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.waitForTimeout(300);
+
+    const issues = { overflow: [], smallText: [], smallTaps: [], strips: [] };
     const tabs = await page.$$eval(".m-tab", (els) => els.map((e) => e.dataset.tab));
     for (const id of tabs) {
       await page.click(`.m-tab[data-tab="${id}"]`);
@@ -137,6 +179,7 @@ try {
         issues.overflow.push(...r.overflow);
         issues.smallText.push(...r.smallText);
         issues.smallTaps.push(...r.smallTaps);
+        issues.strips.push(...r.strips);
         if (r.docOverflow) issues.overflow.push(`document scrollWidth ${r.docOverflow}`);
       }
       if (["projects", "about"].includes(id)) {
