@@ -22,6 +22,8 @@ export interface GeminiRequest {
   maxOutputTokens: number;
   thinkingLevel: string | null;
   timeoutMs: number;
+  /** Abort if no SSE data arrives within this many ms (status -2). */
+  firstByteMs?: number;
 }
 
 export class UpstreamError extends Error {
@@ -113,6 +115,7 @@ export async function* streamGemini(r: GeminiRequest): AsyncGenerator<ModelEvent
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(r.model)}:streamGenerateContent?alt=sse`;
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort("timeout"), r.timeoutMs);
+  const firstTimer = r.firstByteMs ? setTimeout(() => ctrl.abort("slow"), r.firstByteMs) : undefined;
   try {
     const res = await fetch(url, {
       method: "POST",
@@ -126,6 +129,7 @@ export async function* streamGemini(r: GeminiRequest): AsyncGenerator<ModelEvent
       throw new UpstreamError(res.status, detail);
     }
     for await (const data of sseData(res.body)) {
+      clearTimeout(firstTimer);
       let json: unknown;
       try {
         json = JSON.parse(data);
@@ -134,7 +138,41 @@ export async function* streamGemini(r: GeminiRequest): AsyncGenerator<ModelEvent
       }
       yield* parseChunk(json);
     }
+  } catch (e) {
+    if (ctrl.signal.reason === "slow") throw new UpstreamError(-2, "no first chunk in time");
+    throw e;
   } finally {
     clearTimeout(timer);
+    clearTimeout(firstTimer);
+  }
+}
+
+// Overloaded / rate-limited / slow-to-start primaries are worth one retry on
+// another model (separate free-tier quota). Anything else is a real error.
+const RETRYABLE = new Set([-2, 429, 500, 502, 503, 504]);
+
+/**
+ * Streams from the primary model; if it fails BEFORE producing anything with
+ * a retryable error, streams the whole answer from the fallback instead.
+ * Never switches mid-answer.
+ */
+export async function* streamWithFallback(
+  r: GeminiRequest,
+  fallbackModel: string | null,
+  onFallback?: (status: number, model: string) => void
+): AsyncGenerator<ModelEvent> {
+  let started = false;
+  try {
+    for await (const ev of streamGemini(r)) {
+      started = true;
+      yield ev;
+    }
+  } catch (e) {
+    const status = e instanceof UpstreamError ? e.status : undefined;
+    if (started || !fallbackModel || fallbackModel === r.model || status === undefined || !RETRYABLE.has(status)) {
+      throw e;
+    }
+    onFallback?.(status, fallbackModel);
+    yield* streamGemini({ ...r, model: fallbackModel, firstByteMs: undefined });
   }
 }

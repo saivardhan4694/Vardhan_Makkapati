@@ -15,7 +15,7 @@ import { MAX_BODY_BYTES, hashSubject, injectionFlags, validateChatRequest, wrapV
 import type { Rule } from "./limits.ts";
 import type { Limiter } from "./limiter-do.ts";
 import { buildSystemPrompt, INJECTION_REMINDER } from "./prompt.ts";
-import { streamGemini, UpstreamError, type Content, type ModelEvent } from "./gemini.ts";
+import { streamWithFallback, UpstreamError, type Content, type ModelEvent } from "./gemini.ts";
 import { streamMock } from "./mock.ts";
 import { toolDeclarations, type ContactArgs } from "./tools.ts";
 import { fallbackText, runTurn, type ClientEvent } from "./pipeline.ts";
@@ -177,9 +177,10 @@ async function handleChat(req: Request, env: Env, cfg: Config, cors: Record<stri
     },
   ];
 
+  let fallback: { status: number; model: string } | undefined;
   const events: AsyncIterable<ModelEvent> = cfg.mock
     ? streamMock(chat.message)
-    : streamGemini({
+    : streamWithFallback({
         apiKey: env.GEMINI_API_KEY!,
         model: cfg.model,
         systemPrompt: SYSTEM_PROMPT,
@@ -188,6 +189,9 @@ async function handleChat(req: Request, env: Env, cfg: Config, cors: Record<stri
         maxOutputTokens: cfg.maxOutputTokens + cfg.thinkingHeadroom,
         thinkingLevel: cfg.thinkingLevel,
         timeoutMs: cfg.upstreamTimeoutMs,
+        firstByteMs: cfg.fallbackModel ? cfg.firstByteTimeoutMs : undefined,
+      }, cfg.fallbackModel, (status, model) => {
+        fallback = { status, model };
       });
 
   let upstreamStatus: number | undefined;
@@ -221,7 +225,8 @@ async function handleChat(req: Request, env: Env, cfg: Config, cors: Record<stri
       evt: "chat",
       outcome: summary.outcome,
       ms: Date.now() - started,
-      model: cfg.mock ? "mock" : cfg.model,
+      model: cfg.mock ? "mock" : (fallback?.model ?? cfg.model),
+      fallbackFrom: fallback ? { model: cfg.model, status: fallback.status } : undefined,
       turn: v.userTurns,
       inChars: chat.message.length,
       outChars: summary.outChars,

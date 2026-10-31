@@ -100,6 +100,8 @@ message.
 | `AGENT_ENABLED` | 1 | kill switch. Set to `0` and redeploy to serve only the fallback |
 | `GEMINI_MODEL` / `THINKING_LEVEL` | `gemini-3.5-flash-lite` / `minimal` | model id; `off` omits `thinkingConfig` |
 | `UPSTREAM_TIMEOUT_MS` | 20000 | Gemini request timeout |
+| `GEMINI_FALLBACK_MODEL` | `gemini-3.1-flash-lite` | retried once if the primary returns 429/5xx or sends nothing within `FIRST_BYTE_TIMEOUT_MS`; never switches mid-answer. Separate free-tier quota, so it also adds capacity. `off` disables |
+| `FIRST_BYTE_TIMEOUT_MS` | 3500 | how long to wait for the primary's first chunk before falling back |
 
 Free-tier quotas differ by model and change over time. Check yours at
 https://aistudio.google.com/rate-limit and set `GLOBAL_DAILY_CAP` to about 80% of that model's

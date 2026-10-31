@@ -31,10 +31,16 @@ export interface Env {
   CONTACT_DAILY_LIMIT?: string;
   CONTACT_GLOBAL_DAILY_CAP?: string;
   UPSTREAM_TIMEOUT_MS?: string;
+  GEMINI_FALLBACK_MODEL?: string;
+  FIRST_BYTE_TIMEOUT_MS?: string;
 }
 
 export interface Config {
   model: string;
+  /** Retried once when the primary is overloaded or slow to start; null = off. */
+  fallbackModel: string | null;
+  /** No first chunk from the primary within this → switch to the fallback. */
+  firstByteTimeoutMs: number;
   thinkingLevel: string | null;
   allowedOrigins: string[];
   mock: boolean;
@@ -78,9 +84,12 @@ export function loadConfig(env: Env): Config {
     .split(",")
     .map((s) => s.trim().replace(/\/+$/, ""))
     .filter(Boolean);
+  const fallbackModel = (env.GEMINI_FALLBACK_MODEL ?? "gemini-3.1-flash-lite").trim();
   const thinking = (env.THINKING_LEVEL ?? "low").trim().toLowerCase();
   return {
     model: (env.GEMINI_MODEL ?? "").trim() || "gemini-3.5-flash-lite",
+    fallbackModel: fallbackModel === "" || fallbackModel === "off" ? null : fallbackModel,
+    firstByteTimeoutMs: int(env.FIRST_BYTE_TIMEOUT_MS, 3500, 500, 20000),
     thinkingLevel: thinking === "" || thinking === "off" || thinking === "default" ? null : thinking,
     allowedOrigins: origins.length ? origins : DEFAULT_ORIGINS,
     mock: truthy(env.MOCK_LLM),
