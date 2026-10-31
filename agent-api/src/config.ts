@@ -80,7 +80,7 @@ export function loadConfig(env: Env): Config {
     .filter(Boolean);
   const thinking = (env.THINKING_LEVEL ?? "low").trim().toLowerCase();
   return {
-    model: (env.GEMINI_MODEL ?? "").trim() || "gemini-3.8-flash",
+    model: (env.GEMINI_MODEL ?? "").trim() || "gemini-3.5-flash-lite",
     thinkingLevel: thinking === "" || thinking === "off" || thinking === "default" ? null : thinking,
     allowedOrigins: origins.length ? origins : DEFAULT_ORIGINS,
     mock: truthy(env.MOCK_LLM),

@@ -555,7 +555,10 @@ function AgentTerminalInner() {
             spellCheck={false}
             enterKeyHint="send"
             aria-label="Message the portfolio assistant"
-            disabled={busy}
+            // readOnly, not disabled: a disabled input drops focus, and keystrokes
+            // would then reach the page (space/arrows move the camera).
+            readOnly={busy}
+            aria-busy={busy}
           />
           <span className="agent-count" aria-hidden="true">
             {input.length > MAX_INPUT * 0.8 ? `${MAX_INPUT - input.length}` : ""}

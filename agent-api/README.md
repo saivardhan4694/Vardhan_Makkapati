@@ -92,19 +92,19 @@ message.
 | --- | --- | --- |
 | `RATE_SHORT_LIMIT` / `RATE_SHORT_WINDOW_SEC` | 8 / 600 | messages per IP per 10 min |
 | `RATE_DAILY_LIMIT` | 30 | messages per IP per UTC day |
-| `GLOBAL_DAILY_CAP` | 100 | all visitors combined per UTC day (keep it **below** your Gemini free-tier RPD) |
+| `GLOBAL_DAILY_CAP` | 400 | all visitors combined per UTC day (keep it **below** your Gemini free-tier RPD) |
 | `CONTACT_DAILY_LIMIT` / `CONTACT_GLOBAL_DAILY_CAP` | 3 / 40 | confirmed emails per IP / overall per day |
 | `MAX_INPUT_CHARS` | 500 | max visitor message length |
 | `MAX_OUTPUT_TOKENS` / `THINKING_TOKEN_HEADROOM` | 400 / 600 | answer budget / extra budget for thinking |
 | `MAX_TURNS` / `HISTORY_WINDOW` | 12 / 6 | turns per conversation / past messages sent to the model |
 | `AGENT_ENABLED` | 1 | kill switch. Set to `0` and redeploy to serve only the fallback |
-| `GEMINI_MODEL` / `THINKING_LEVEL` | `gemini-3.8-flash` / `low` | model id; `off` omits `thinkingConfig` |
+| `GEMINI_MODEL` / `THINKING_LEVEL` | `gemini-3.5-flash-lite` / `minimal` | model id; `off` omits `thinkingConfig` |
 | `UPSTREAM_TIMEOUT_MS` | 20000 | Gemini request timeout |
 
 Free-tier quotas differ by model and change over time. Check yours at
 https://aistudio.google.com/rate-limit and set `GLOBAL_DAILY_CAP` to about 80% of that model's
 requests-per-day. If the model is rate-limited anyway, visitors get the fallback note.
-`gemini-3.5-flash-lite` is a cheaper option with a higher quota (use `THINKING_LEVEL=minimal`).
+Default is `gemini-3.5-flash-lite` (free tier: 15 RPM, 250K TPM, 500 RPD at time of writing). Gemma 4 has a higher RPD but only 16K TPM, and every request carries ~7K tokens of knowledge, so it fits only ~2 requests per minute.
 
 ### Why a Durable Object (not KV or the Rate Limiting binding)
 

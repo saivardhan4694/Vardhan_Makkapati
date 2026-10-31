@@ -16,8 +16,8 @@
   // Non-secret configuration. Secrets (GEMINI_API_KEY, RESEND_API_KEY,
   // optional TURNSTILE_SECRET, IP_HASH_SALT) are set with `wrangler secret put`.
   "vars": {
-    "GEMINI_MODEL": "gemini-3.8-flash",
-    "THINKING_LEVEL": "low",
+    "GEMINI_MODEL": "gemini-3.5-flash-lite",
+    "THINKING_LEVEL": "minimal",
     "ALLOWED_ORIGINS": "https://saivardhan4694.github.io,http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173",
     "AGENT_ENABLED": "1",
     "MOCK_LLM": "0",
@@ -31,7 +31,7 @@
     "RATE_SHORT_LIMIT": "8",
     "RATE_SHORT_WINDOW_SEC": "600",
     "RATE_DAILY_LIMIT": "30",
-    "GLOBAL_DAILY_CAP": "100",
+    "GLOBAL_DAILY_CAP": "400",
     "CONTACT_DAILY_LIMIT": "3",
     "CONTACT_GLOBAL_DAILY_CAP": "40",
     "UPSTREAM_TIMEOUT_MS": "20000"
