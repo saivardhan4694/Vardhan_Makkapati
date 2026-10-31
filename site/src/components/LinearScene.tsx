@@ -7,9 +7,21 @@ import Education from "./sections/Education";
 import Ping from "./sections/Ping";
 import { mainNodes } from "../data/graph";
 import { LayoutContext } from "../lib/layoutMode";
+import { focusPing, type NavRequest } from "../lib/navNode";
 import "../styles/linear.css";
 
 const SECTION_COMPONENTS = [Hero, About, Skills, Projects, Education, Ping];
+
+// "Already in view" for a nav request: the section heading sits in the top
+// part of the screen below the sticky bar, or the section fills most of it.
+function isInView(el: HTMLElement, barBottom: number) {
+  const r = el.getBoundingClientRect();
+  const avail = window.innerHeight - barBottom;
+  if (avail <= 0) return false;
+  const topVisible = r.top >= barBottom - 8 && r.top <= barBottom + avail * 0.4;
+  const covered = Math.min(r.bottom, window.innerHeight) - Math.max(r.top, barBottom);
+  return topVisible || covered >= avail * 0.75;
+}
 
 const prefersReducedMotion = () =>
   typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -25,6 +37,7 @@ export default function LinearScene() {
   const [active, setActive] = useState(mainNodes[0].id);
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
   const tabsRef = useRef<HTMLDivElement>(null);
+  const barRef = useRef<HTMLElement>(null);
   // While a tab-initiated smooth scroll is running, the observer would flick
   // the highlight through every section passed on the way; hold it instead.
   const lockUntil = useRef(0);
@@ -37,11 +50,23 @@ export default function LinearScene() {
     el.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "start" });
   }, []);
 
-  // Same event the camera scene listens to.
+  // Same event the camera scene listens to. A section that is already in
+  // view gets a focus ping instead of a scroll; the outcome is reported back
+  // on the event so callers (the agent) can tell.
   useEffect(() => {
     const onNav = (e: Event) => {
-      const id = (e as CustomEvent<{ id: string }>).detail?.id;
-      if (id && mainNodes.some((n) => n.id === id)) scrollToNode(id);
+      const req = (e as CustomEvent<NavRequest>).detail;
+      const id = req?.id;
+      if (!id || !mainNodes.some((n) => n.id === id)) return;
+      const el = sectionRefs.current[id];
+      const barBottom = barRef.current?.getBoundingClientRect().bottom ?? 0;
+      if (el && isInView(el, barBottom)) {
+        req.outcome = "same";
+        if (req.ping !== false) focusPing(el);
+        return;
+      }
+      req.outcome = "travel";
+      scrollToNode(id);
     };
     window.addEventListener("nav-node", onNav);
     return () => window.removeEventListener("nav-node", onNav);
@@ -93,7 +118,7 @@ export default function LinearScene() {
     <LayoutContext.Provider value="linear">
       <div className="m-root">
         <div className="m-scan" aria-hidden="true" />
-        <header className="m-bar">
+        <header className="m-bar" ref={barRef}>
           <div className="m-bar-top">
             <button type="button" className="m-brand" onClick={() => scrollToNode(mainNodes[0].id)}>
               <span className="accent">&gt;</span> PORTFOLIO_OS

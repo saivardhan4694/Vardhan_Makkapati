@@ -1,5 +1,5 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react";
-import type { BuildsCommand } from "../../lib/navNode";
+import { flashOnce, type BuildsCommand } from "../../lib/navNode";
 import {
   CATEGORIES,
   PROJECTS,
@@ -24,6 +24,9 @@ function ProjectsBrowser() {
     PROJECTS.find((p) => p.flagship)?.id ?? PROJECTS[0].id
   );
   const listRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  // Set by a builds-cmd with `flash` (BUILDS already on screen).
+  const [flashReq, setFlashReq] = useState<{ open: boolean } | null>(null);
 
   const visible = useMemo(
     () => (filter === "all" ? PROJECTS : PROJECTS.filter((p) => p.category === filter)),
@@ -59,10 +62,17 @@ function ProjectsBrowser() {
         const list = nextFilter === "all" ? PROJECTS : PROJECTS.filter((p) => p.category === nextFilter);
         if (list[0]) setSelectedId(list[0].id);
       }
+      if (cmd.flash && (target || nextFilter)) setFlashReq({ open: !!target });
     };
     window.addEventListener("builds-cmd", onCmd);
     return () => window.removeEventListener("builds-cmd", onCmd);
   }, []);
+
+  // Already looking at BUILDS: flash what the command changed, once rendered.
+  useEffect(() => {
+    if (!flashReq) return;
+    flashOnce(panelRef.current?.querySelector(flashReq.open ? ".repo-row--active" : ".repo-dir--active"));
+  }, [flashReq]);
 
   // Up/down walks the list and keeps the highlighted row scrolled into view.
   const onListKey = (e: React.KeyboardEvent) => {
@@ -77,7 +87,7 @@ function ProjectsBrowser() {
   };
 
   return (
-    <div className="panel panel--projects">
+    <div className="panel panel--projects" ref={panelRef}>
       <div className="panel-kicker-row">
         <div className="panel-kicker">&gt; BUILDS — REPO[]</div>
         <div className="panel-kicker-dim">
@@ -220,9 +230,10 @@ function ProjectsBrowser() {
 function ProjectsLinear() {
   const [filter, setFilter] = useState<Filter>("all");
   const [openId, setOpenId] = useState<string | null>(PROJECTS.find((p) => p.flagship)?.id ?? null);
-  // Bumped by an "open" command; the effect below scrolls once it has rendered.
-  const [scrollReq, setScrollReq] = useState<{ id: string } | null>(null);
+  // Set by a command; the effect below scrolls/flashes once it has rendered.
+  const [fx, setFx] = useState<{ open: string } | { filter: true } | null>(null);
   const listRef = useRef<HTMLUListElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const visible = useMemo(
     () => (filter === "all" ? PROJECTS : PROJECTS.filter((p) => p.category === filter)),
@@ -231,7 +242,8 @@ function ProjectsLinear() {
 
   // Same "builds-cmd" contract as ProjectsBrowser (the portfolio agent's
   // filter/open tools), mapped onto the accordion: filter the list, expand
-  // the repo and scroll it to just below the sticky bar.
+  // the repo and scroll it to just below the sticky bar (or, if it is
+  // already in view, just flash it).
   useEffect(() => {
     const onCmd = (e: Event) => {
       const cmd = (e as CustomEvent<BuildsCommand>).detail ?? {};
@@ -242,30 +254,41 @@ function ProjectsLinear() {
         const fits = (f: Filter) => f === "all" || f === target.category;
         setFilter((f) => (validFilter && fits(validFilter) ? validFilter : fits(f) ? f : target.category));
         setOpenId(target.id);
-        setScrollReq({ id: target.id });
+        setFx({ open: target.id });
       } else if (validFilter) {
         setFilter(validFilter);
+        if (cmd.flash) setFx({ filter: true });
       }
     };
     window.addEventListener("builds-cmd", onCmd);
     return () => window.removeEventListener("builds-cmd", onCmd);
   }, []);
 
-  // Runs after the expanded row has rendered. The caller's goToNode
-  // ("projects") smooth scroll is already under way; this one replaces it.
+  // Runs after the expanded row has rendered. If the caller's goToNode
+  // ("projects") started a smooth scroll, this one replaces it.
   useEffect(() => {
-    if (!scrollReq) return;
-    const row = listRef.current?.querySelector<HTMLElement>(`[data-repo="${scrollReq.id}"]`);
+    if (!fx) return;
+    if ("filter" in fx) {
+      flashOnce(panelRef.current?.querySelector(".repo-dir--active"));
+      return;
+    }
+    const row = listRef.current?.querySelector<HTMLElement>(`[data-repo="${fx.open}"]`);
     if (!row) return;
+    const barBottom = document.querySelector(".m-bar")?.getBoundingClientRect().bottom ?? 0;
+    const top = row.getBoundingClientRect().top;
+    if (top >= barBottom - 8 && top <= window.innerHeight * 0.45) {
+      flashOnce(row.querySelector(".m-repo-row"));
+      return;
+    }
     const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const raf = requestAnimationFrame(() =>
       row.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "start" })
     );
     return () => cancelAnimationFrame(raf);
-  }, [scrollReq]);
+  }, [fx]);
 
   return (
-    <div className="panel panel--projects">
+    <div className="panel panel--projects" ref={panelRef}>
       <div className="panel-kicker-row">
         <div className="panel-kicker">&gt; BUILDS — REPO[]</div>
         <div className="panel-kicker-dim">

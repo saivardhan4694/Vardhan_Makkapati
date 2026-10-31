@@ -35,7 +35,9 @@ async function ask(page, text) {
   if (await page.$(".agent-panel--peek")) await page.click(".agent-toggle");
   await page.fill("#agent-input", text);
   await page.click(".agent-send");
-  await page.waitForFunction(() => !document.querySelector("#agent-input").disabled, null, { timeout: 15000 });
+  // Busy = input readOnly / aria-busy; wait for it to start, then to finish.
+  await page.waitForFunction(() => document.querySelector("#agent-input").readOnly, null, { timeout: 5000 }).catch(() => {});
+  await page.waitForFunction(() => !document.querySelector("#agent-input").readOnly, null, { timeout: 15000 });
   await page.waitForTimeout(1400);
 }
 

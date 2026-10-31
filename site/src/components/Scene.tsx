@@ -10,11 +10,16 @@ import Education from "./sections/Education";
 import Ping from "./sections/Ping";
 import { mainNodes, NODE_W, NODE_H, worldBounds } from "../data/graph";
 import { cameraAt, easeInOutCubic, TOTAL_SEGMENTS, HIVE_ZOOM, FOCUS_SCALE } from "../data/camera";
+import { focusPing, type NavOutcome, type NavRequest } from "../lib/navNode";
 
 // Fraction of a nav jump's duration spent zooming out / zooming back in; the
 // rest is spent cruising at hive altitude. Applied regardless of how many
 // intermediate nodes the jump's path happens to cross.
 const JUMP_ZOOM_RAMP = 0.18;
+// A nav request closer than this (in camera segments) to the target node
+// counts as "already there": settle + focus ping instead of a full jump.
+const SAME_NODE_SEGMENTS = 0.5;
+const SETTLE_SECONDS = 0.35;
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -112,9 +117,42 @@ export default function Scene() {
   const renderProgressRef = useRef(0);
   const jumpingRef = useRef(false);
 
-  const jumpToNode = (index: number) => {
+  const jumpTargetRef = useRef(-1);
+
+  // Settle the camera onto node `index` without leaving it (no zoom-out):
+  // used when a nav request targets the node already on screen.
+  const settleOnNode = (index: number, fromProgress: number, toProgress: number) => {
     const trigger = triggerRef.current;
     if (!trigger) return;
+    const fromScale = cameraAt(fromProgress).scale;
+    jumpTweenRef.current?.kill();
+    jumpingRef.current = true;
+    jumpTargetRef.current = index;
+    const state = { p: fromProgress };
+    const span = toProgress - fromProgress;
+    jumpTweenRef.current = gsap.to(state, {
+      p: toProgress,
+      duration: SETTLE_SECONDS,
+      ease: "power2.out",
+      onUpdate: () => {
+        // Scale only ever moves from what's on screen toward focus.
+        const t = span === 0 ? 1 : (state.p - fromProgress) / span;
+        const scale = gsap.utils.interpolate(fromScale, FOCUS_SCALE, t);
+        applyCameraRef.current?.(state.p, scale, state.p === toProgress);
+        trigger.scroll(trigger.start + state.p * (trigger.end - trigger.start));
+      },
+      onComplete: () => {
+        jumpingRef.current = false;
+      },
+      onInterrupt: () => {
+        jumpingRef.current = false;
+      },
+    });
+  };
+
+  const jumpToNode = (index: number, ping = true): NavOutcome => {
+    const trigger = triggerRef.current;
+    if (!trigger) return "travel";
 
     // Focus keyframes sit at even indices in cameraKeyframes (focus, hive,
     // focus, hive, ...), so node i's focus is at progress (i*2)/TOTAL_SEGMENTS.
@@ -124,6 +162,24 @@ export default function Scene() {
     const fromProgress = renderProgressRef.current;
     const toProgress = (index * 2) / TOTAL_SEGMENTS;
     const segmentsCrossed = Math.abs(toProgress - fromProgress) * TOTAL_SEGMENTS;
+
+    // Already flying there: let that flight finish rather than restart it.
+    if (jumpingRef.current && jumpTargetRef.current === index && segmentsCrossed >= SAME_NODE_SEGMENTS) {
+      return "travel";
+    }
+
+    // Already there: no zoom-out/in round trip. Nudge onto the exact focus
+    // if slightly off (unless a settle/landing is already doing that), then
+    // ping the panel.
+    if (segmentsCrossed < SAME_NODE_SEGMENTS) {
+      const landingHere = jumpingRef.current && jumpTargetRef.current === index;
+      if (!landingHere && segmentsCrossed > 0.002) settleOnNode(index, fromProgress, toProgress);
+      if (ping) {
+        focusPing(worldRef.current?.querySelector(`.node-frame[data-node="${mainNodes[index].id}"]`));
+      }
+      return "same";
+    }
+
     const duration = gsap.utils.clamp(
       JUMP_MIN_SECONDS,
       5,
@@ -138,6 +194,7 @@ export default function Scene() {
 
     jumpTweenRef.current?.kill();
     jumpingRef.current = true;
+    jumpTargetRef.current = index;
 
     const state = { p: fromProgress };
     const span = toProgress - fromProgress;
@@ -190,6 +247,7 @@ export default function Scene() {
         jumpingRef.current = false;
       },
     });
+    return "travel";
   };
 
   useLayoutEffect(() => {
@@ -328,9 +386,9 @@ export default function Scene() {
     // summary uses this to open the full section behind each of its cards.
     // An event keeps the panels decoupled from the camera rig.
     const onNavRequest = (e: Event) => {
-      const id = (e as CustomEvent<{ id: string }>).detail?.id;
-      const index = mainNodes.findIndex((n) => n.id === id);
-      if (index >= 0) jumpToNode(index);
+      const req = (e as CustomEvent<NavRequest>).detail;
+      const index = mainNodes.findIndex((n) => n.id === req?.id);
+      if (index >= 0) req.outcome = jumpToNode(index, req.ping !== false);
     };
     window.addEventListener("nav-node", onNavRequest);
 
@@ -430,6 +488,7 @@ export default function Scene() {
                 <div
                   key={n.id}
                   className="node-frame"
+                  data-node={n.id}
                   style={{ left: n.x, top: n.y, width: NODE_W, height: NODE_H }}
                 >
                   <Comp />

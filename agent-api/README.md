@@ -178,6 +178,11 @@ filters and expands the repo, then scrolls it into view. When a tool or citation
 sheet shrinks to a "peek" strip so the visitor can see the result. Tap ▴ or the prompt to expand it
 again. The desktop camera panel is unchanged.
 
+In both layouts, navigating to the section that is already on screen does not travel (no camera
+zoom-out, no scroll). The section gets a short "focus ping" instead. A BUILDS filter or open on
+BUILDS flashes the chip or row that changed. The browser decides this on its own, and the
+"under the hood" tool line says `already on <SECTION>`.
+
 `site/scripts/agent-check.mjs` (`npm run test:agent` in `site/`) is an opt-in Playwright check of
 the panel at 4 mobile sizes and 1440x900. It needs this mock worker running with raised limits and a
 site build that has `VITE_AGENT_API_URL` set. See the header of that file. CI does not run it. It

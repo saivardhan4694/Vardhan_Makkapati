@@ -4,7 +4,7 @@
 
 import { mainNodes } from "../../data/graph";
 import { CATEGORIES, PROJECTS } from "../../data/projects";
-import { commandBuilds, goToNode } from "../../lib/navNode";
+import { commandBuilds, goToNode, type BuildsCommand } from "../../lib/navNode";
 
 export interface Citation {
   sectionId: string;
@@ -13,6 +13,15 @@ export interface Citation {
 }
 
 const str = (v: unknown) => (typeof v === "string" ? v : "");
+const BUILDS = mainNodes.find((n) => n.id === "projects")?.label ?? "BUILDS";
+
+// Navigate first so we know whether BUILDS was already on screen: if it was,
+// the panel flashes the changed chip/row instead of the section pinging.
+function driveBuilds(cmd: BuildsCommand): boolean {
+  const same = goToNode("projects", { ping: false }) === "same";
+  commandBuilds({ ...cmd, flash: same });
+  return same;
+}
 
 /** Returns a short description of what was done, or null if refused. */
 export function runTool(name: string, args: Record<string, unknown>): string | null {
@@ -20,26 +29,24 @@ export function runTool(name: string, args: Record<string, unknown>): string | n
     case "navigate_to": {
       const n = mainNodes.find((x) => x.id === str(args.section));
       if (!n) return null;
-      goToNode(n.id);
-      return `camera -> ${n.label}`;
+      return goToNode(n.id) === "same" ? `already on ${n.label}` : `camera -> ${n.label}`;
     }
     case "filter_projects": {
       const c = CATEGORIES.find((x) => x.id === str(args.category));
       if (!c) return null;
-      commandBuilds({ filter: c.id });
-      goToNode("projects");
-      return `builds -> ls ${c.label}`;
+      const same = driveBuilds({ filter: c.id });
+      return `builds -> ls ${c.label}${same ? ` (already on ${BUILDS})` : ""}`;
     }
     case "open_project": {
       const p = PROJECTS.find((x) => x.id === str(args.id));
       if (!p) return null;
-      commandBuilds({ open: p.id });
-      goToNode("projects");
-      return `builds -> cat ${p.category}/${p.id}`;
+      const same = driveBuilds({ open: p.id });
+      return `builds -> cat ${p.category}/${p.id}${same ? ` (already on ${BUILDS})` : ""}`;
     }
-    case "get_contact":
-      goToNode("ping");
-      return "camera -> PING";
+    case "get_contact": {
+      const label = mainNodes.find((x) => x.id === "ping")?.label ?? "PING";
+      return goToNode("ping") === "same" ? `already on ${label}` : `camera -> ${label}`;
+    }
     default:
       return null;
   }
@@ -58,6 +65,6 @@ export function resolveCitation(label: string, id?: string): Citation | null {
 }
 
 export function followCitation(c: Citation) {
-  if (c.projectId) commandBuilds({ open: c.projectId });
-  goToNode(c.sectionId);
+  if (c.projectId) driveBuilds({ open: c.projectId });
+  else goToNode(c.sectionId);
 }

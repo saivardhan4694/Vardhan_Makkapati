@@ -189,7 +189,10 @@ try {
       }
     }
     // The "nav-node" event (goToNode) is the navigation contract shared with
-    // the camera scene; panel links and integrations rely on it.
+    // the camera scene; panel links and integrations rely on it. Start from
+    // the top so the section is out of view and the request has to scroll.
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.waitForTimeout(300);
     await page.evaluate(() => window.dispatchEvent(new CustomEvent("nav-node", { detail: { id: "education" } })));
     await page.waitForTimeout(1300);
     const navOk = await page.evaluate(() => {
@@ -198,6 +201,19 @@ try {
       return Math.abs(top - bar) <= 6 && document.querySelector(".m-tab--active")?.dataset.tab === "education";
     });
     if (!navOk) fail(name, 'nav-node event did not scroll to "education"');
+    // Asking again for the section already in view must not scroll; it
+    // reports "same" and pings the section instead.
+    const again = await page.evaluate(async () => {
+      const y0 = scrollY;
+      const detail = { id: "education" };
+      window.dispatchEvent(new CustomEvent("nav-node", { detail }));
+      const pinged = document.querySelector('[data-node="education"]').classList.contains("focus-ping");
+      await new Promise((r) => setTimeout(r, 600));
+      return { outcome: detail.outcome, moved: Math.abs(scrollY - y0), pinged };
+    });
+    if (again.outcome !== "same" || again.moved > 1 || !again.pinged) {
+      fail(name, `nav-node to the section in view should ping, not scroll: ${JSON.stringify(again)}`);
+    }
 
     for (const [kind, list] of Object.entries(issues)) {
       for (const msg of uniq(list).slice(0, 8)) fail(name, `${kind}: ${msg}`);

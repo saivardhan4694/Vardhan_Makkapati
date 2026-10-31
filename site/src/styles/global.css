@@ -1748,3 +1748,134 @@ body {
   line-height: 1.7;
   color: var(--text-dimmer);
 }
+
+/* ---------------------------------------------------------------- */
+/* Focus ping: a nav request for the section already on screen.      */
+/* Corner brackets flash accent + one scanline sweeps down the panel. */
+/* Added/removed by focusPing() in lib/navNode.ts (re-triggerable).   */
+/* Works on .node-frame (camera) and .m-section (linear).             */
+/* ---------------------------------------------------------------- */
+
+.focus-ping::before,
+.focus-ping::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.focus-ping::before {
+  inset: 6px;
+  background-image: linear-gradient(var(--accent), var(--accent)),
+    linear-gradient(var(--accent), var(--accent)), linear-gradient(var(--accent), var(--accent)),
+    linear-gradient(var(--accent), var(--accent)), linear-gradient(var(--accent), var(--accent)),
+    linear-gradient(var(--accent), var(--accent)), linear-gradient(var(--accent), var(--accent)),
+    linear-gradient(var(--accent), var(--accent));
+  background-size: 28px 2px, 2px 28px, 28px 2px, 2px 28px, 28px 2px, 2px 28px, 28px 2px, 2px 28px;
+  background-position: left top, left top, right top, right top, left bottom, left bottom,
+    right bottom, right bottom;
+  background-repeat: no-repeat;
+  filter: drop-shadow(0 0 6px rgba(199, 255, 47, 0.7));
+  animation: focus-ping-brackets 0.8s ease-out both;
+}
+
+.focus-ping::after {
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 64px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(199, 255, 47, 0.06) 45%,
+    rgba(199, 255, 47, 0.35) 92%,
+    rgba(199, 255, 47, 0.7)
+  );
+  border-bottom: 1px solid var(--accent);
+  animation: focus-ping-sweep 0.8s cubic-bezier(0.4, 0, 0.6, 1) both;
+}
+
+@keyframes focus-ping-brackets {
+  0% {
+    opacity: 0;
+    transform: scale(1.012);
+  }
+  18% {
+    opacity: 1;
+    transform: none;
+  }
+  45% {
+    opacity: 0.45;
+  }
+  62% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes focus-ping-sweep {
+  0% {
+    top: -64px;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
+}
+
+/* Camera: the frame is the whole viewport-sized node; keep the brackets
+   clear of the fixed chrome bar and footer, around the panel content. */
+.node-frame.focus-ping::before {
+  inset: 128px 64px 96px;
+}
+
+/* One-off highlight on the element a command just changed (BUILDS chip/row). */
+.flash-once {
+  animation: flash-once 0.6s ease-out;
+}
+
+@keyframes flash-once {
+  0% {
+    box-shadow: 0 0 0 0 rgba(199, 255, 47, 0);
+  }
+  25% {
+    box-shadow: 0 0 0 2px var(--accent), 0 0 18px rgba(199, 255, 47, 0.45);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(199, 255, 47, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .focus-ping::after {
+    display: none;
+  }
+
+  .focus-ping::before {
+    animation: focus-ping-reduced 0.5s linear both;
+  }
+
+  .flash-once {
+    animation: none;
+    outline: 1px solid var(--accent);
+  }
+
+  @keyframes focus-ping-reduced {
+    0%,
+    80% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+}
