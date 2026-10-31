@@ -1,4 +1,5 @@
-import { memo } from "react";
+import { memo, useState } from "react";
+import { useIsLinear } from "../../lib/layoutMode";
 import {
   CERTIFICATIONS,
   TIMELINE,
@@ -6,7 +7,14 @@ import {
   TRAINING_STATUS as STATUS_ITEMS,
 } from "../../data/profile";
 
+// Linear layout shows this many certifications before a "show all" toggle.
+const CERTS_PREVIEW = 5;
+
 function Education() {
+  const linear = useIsLinear();
+  const [allCerts, setAllCerts] = useState(false);
+  const certs = linear && !allCerts ? CERTIFICATIONS.slice(0, CERTS_PREVIEW) : CERTIFICATIONS;
+
   return (
     <div className="panel panel--education">
       <div className="panel-kicker">&gt; TRAINING — LOG.ACADEMIC</div>
@@ -60,13 +68,18 @@ function Education() {
           {/* Scrolls inside itself; overscroll is contained so the wheel
               never leaks out and drags the camera to another section. */}
           <div className="edu-certs">
-            {CERTIFICATIONS.map((c) => (
+            {certs.map((c) => (
               <div className="edu-cert-row" key={c.name}>
                 <span className="edu-cert-name">{c.name}</span>
                 <span className="edu-cert-issuer">{c.issuer}</span>
               </div>
             ))}
           </div>
+          {linear && CERTIFICATIONS.length > CERTS_PREVIEW && (
+            <button type="button" className="m-more" aria-expanded={allCerts} onClick={() => setAllCerts((v) => !v)}>
+              {allCerts ? "ls certifications/ | head -5" : `ls -a certifications/  (+${CERTIFICATIONS.length - CERTS_PREVIEW} more)`}
+            </button>
+          )}
         </div>
       </div>
 

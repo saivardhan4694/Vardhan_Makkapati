@@ -8,7 +8,7 @@
     "name": "Sai Vardhan Makkapati",
     "role": "AGENTIC AI ENGINEER",
     "tagline": "Designing & shipping autonomous LLM agents",
-    "currentPosition": null,
+    "currentPosition": "AI Engineer @ Ideyalabs",
     "headlineSkills": [
       "PYTHON",
       "PYTORCH",
@@ -75,10 +75,10 @@
       "current": false
     },
     {
-      "period": "NOW",
-      "role": "Open to new roles",
-      "org": "OPEN_TO_WORK",
-      "note": "Building agentic AI systems independently while looking for the next full-time opportunity.",
+      "period": "MAR 2026 — NOW",
+      "role": "AI Engineer",
+      "org": "Ideyalabs",
+      "note": "Building and shipping AI systems as an AI engineer.",
       "stack": [],
       "current": true
     }
@@ -667,5 +667,5 @@
       }
     ]
   },
-  "hash": "83aa7f8499fc47cd"
+  "hash": "b71b7ed36b031772"
 }

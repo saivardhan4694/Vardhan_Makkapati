@@ -45,10 +45,10 @@ export const EXPERIENCE: ExperienceEntry[] = [
     current: false,
   },
   {
-    period: "NOW",
-    role: "Open to new roles",
-    org: "OPEN_TO_WORK",
-    note: "Building agentic AI systems independently while looking for the next full-time opportunity.",
+    period: "MAR 2026 — NOW",
+    role: "AI Engineer",
+    org: "Ideyalabs",
+    note: "Building and shipping AI systems as an AI engineer.",
     stack: [],
     current: true,
   },
@@ -228,7 +228,7 @@ export interface Channel {
 
 // `href: null` renders the row as a placeholder — visible, in-theme, but not
 // a live link — the same convention the other pages use for unfilled details
-// like [YOUR_COMPANY]. Only entries with a real destination are clickable.
+// like the unfilled resume link. Only entries with a real destination are clickable.
 export const CHANNELS: Channel[] = [
   {
     id: "EMAIL",

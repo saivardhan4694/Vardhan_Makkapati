@@ -1,0 +1,55 @@
+name: Mobile layout check
+
+# Builds the site and runs the Playwright mobile regression check
+# (site/scripts/mobile-check.mjs) at phone, tablet and landscape sizes.
+# Chromium emulation only — it does not replace a real iOS Safari check.
+on:
+  push:
+    branches: [main, "claude/**"]
+    paths: ["site/**", ".github/workflows/mobile-check.yml"]
+  pull_request:
+    paths: ["site/**", ".github/workflows/mobile-check.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mobile:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: site
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+
+      - run: npm ci
+
+      - run: npx playwright install --with-deps chromium
+
+      - run: npm run build
+
+      - name: Serve the build
+        run: |
+          npx vite preview --port 4173 --strictPort --host 127.0.0.1 &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:4173/ > /dev/null && exit 0; sleep 1; done; exit 1
+
+      - name: Mobile checks
+        run: npm run test:mobile
+        env:
+          BASE_URL: http://127.0.0.1:4173/
+          SHOT_DIR: mobile-shots
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-shots
+          path: site/mobile-shots
+          retention-days: 14

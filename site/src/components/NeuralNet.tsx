@@ -1,4 +1,5 @@
 import { memo, useEffect, useRef } from "react";
+import { useIsLinear } from "../lib/layoutMode";
 
 // A feed-forward net: four layers, input -> output, each one a flat grid of
 // neurons standing in the Y/Z plane. Grids rather than rings or discs — a
@@ -72,6 +73,18 @@ const HALO_SOLID = 0.34; // untouched out to this share of the radius
 // Short linear fades at the panel bounds so nothing is cut hard on viewports
 // where the node is taller than the screen.
 const EDGE_FADE = 0.06;
+
+// "Band" layout, used by the linear (mobile/tablet) hero: the canvas is a
+// full-width strip of its own rather than the whole panel, so the net is
+// centred and scaled to fill the strip instead of being sized against a
+// nominal 1800x1120 desktop panel (which shrank it to a ~110px cluster with
+// overlapping captions on a phone). World-space extent of the net, including
+// the swing of the rotation and the caption row below it:
+const BAND_WORLD_W = (LAYER_COUNT - 1) * LAYER_GAP + 2 * SPACING_Z + 40;
+const BAND_WORLD_TOP = Math.max(...LAYER_GRID.map((g) => ((g.rows - 1) / 2) * SPACING_Y)) + 24;
+const BAND_WORLD_H = BAND_WORLD_TOP + CAPTION_Y + 16;
+const BAND_FILL = 0.8; // share of the strip the net may occupy
+const BAND_HALO = 0.62; // halo radius as a share of each strip dimension
 
 // Palette mirrors the custom properties in global.css. Canvas can't resolve
 // var(), so these are kept in sync by hand. Idle nodes and edges are the same
@@ -245,6 +258,7 @@ function buildNetwork() {
 function NeuralNet() {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const band = useIsLinear();
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -255,6 +269,10 @@ function NeuralNet() {
 
     const { neurons, edges, layerStart } = buildNetwork();
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // Touch-first devices (phones, tablets) run the animation at 30fps: it is
+    // decorative, and halving its frame cost is the single biggest win for
+    // scrolling smoothness there. Mouse/trackpad devices are unaffected.
+    const minFrameMs = window.matchMedia("(pointer: coarse)").matches ? 1000 / 30 : 0;
 
     // Pre-rendered glow sprite. Canvas shadowBlur gives the same look but
     // re-rasterizes a blur per shape per frame — with ~20 neurons firing that
@@ -300,7 +318,7 @@ function NeuralNet() {
       cssH = wrap.offsetHeight;
       // Capped at 1.5: the panel is already CSS-scaled up to 1.2x by the
       // camera, and every extra backing pixel is rasterized every frame.
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      const dpr = Math.min(window.devicePixelRatio || 1, band ? 2 : 1.5);
       canvas.width = Math.round(cssW * dpr);
       canvas.height = Math.round(cssH * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -312,8 +330,8 @@ function NeuralNet() {
       // Elliptical halo, built as a circle in a space the draw loop scales —
       // gradient coordinates resolve against the transform in force when it
       // is painted, so one cached circular gradient gives any ellipse.
-      haloR = cssW * HALO_RX;
-      halo = ctx.createRadialGradient(0, 0, haloR * HALO_SOLID, 0, 0, haloR);
+      haloR = cssW * (band ? BAND_HALO : HALO_RX);
+      halo = ctx.createRadialGradient(0, 0, haloR * (band ? 0.72 : HALO_SOLID), 0, 0, haloR);
       halo.addColorStop(0, clear);
       halo.addColorStop(0.55, "rgba(0, 0, 0, 0.28)");
       halo.addColorStop(0.82, "rgba(0, 0, 0, 0.78)");
@@ -406,10 +424,12 @@ function NeuralNet() {
     };
 
     let last = performance.now();
+    let lastStats = 0;
     let raf = 0;
 
     const draw = (now: number) => {
       raf = requestAnimationFrame(draw);
+      if (minFrameMs && now - last < minFrameMs - 2) return;
       const dt = Math.min(now - last, 64);
       last = now;
       if (!visible || cssW === 0) return;
@@ -461,9 +481,19 @@ function NeuralNet() {
       // Placed toward the right of a canvas that spans the whole panel, and
       // scaled against a nominal panel size rather than the canvas box, so
       // the net keeps its size instead of ballooning with the bigger canvas.
-      const ox = cssW * NET_CENTER_X;
-      const oy = cssH * NET_CENTER_Y;
-      const fit = Math.min(cssW / 1800, cssH / 1120);
+      let ox: number;
+      let oy: number;
+      let fit: number;
+      if (band) {
+        fit = Math.min((cssW * BAND_FILL) / BAND_WORLD_W, (cssH * BAND_FILL) / BAND_WORLD_H);
+        ox = cssW / 2;
+        // Centre the net *with* its caption row, not just the neurons.
+        oy = cssH / 2 + ((BAND_WORLD_TOP - (CAPTION_Y + 16)) / 2) * fit;
+      } else {
+        ox = cssW * NET_CENTER_X;
+        oy = cssH * NET_CENTER_Y;
+        fit = Math.min(cssW / 1800, cssH / 1120);
+      }
 
       const project = (lx: number, ly: number, lz: number) => {
         const x1 = lx * cy + lz * sy;
@@ -632,8 +662,11 @@ function NeuralNet() {
 
       // Layer captions, projected with the geometry so they sit under their
       // own plane and travel with the rotation.
-      ctx.font = '9px "JetBrains Mono", ui-monospace, monospace';
+      ctx.font = band
+        ? '10px "JetBrains Mono", ui-monospace, monospace'
+        : '9px "JetBrains Mono", ui-monospace, monospace';
       ctx.textAlign = "center";
+      const captionBoxes: string[] = [];
       for (let li = 0; li < LAYER_COUNT; li++) {
         const grid = LAYER_GRID[li];
         const lx = (li - (LAYER_COUNT - 1) / 2) * LAYER_GAP;
@@ -647,6 +680,24 @@ function NeuralNet() {
             ? `rgba(${ACCENT_RGB}, ${0.35 + layerLit * 0.4})`
             : `rgba(${IDLE_RGB}, 0.3)`;
         ctx.fillText(grid.label, p.sx, p.sy);
+        if (band) {
+          const w = ctx.measureText(grid.label).width;
+          captionBoxes.push(`${Math.round(p.sx - w / 2)}:${Math.round(p.sx + w / 2)}`);
+        }
+      }
+      // Band layout publishes its caption extents and net width (about once
+      // a second) so the mobile regression check can assert the captions
+      // never overlap and the net actually fills the strip.
+      if (band && now - lastStats > 1000) {
+        lastStats = now;
+        let minX = Infinity;
+        let maxX = -Infinity;
+        for (let i = 0; i < layerStart[LAYER_COUNT - 1] + LAYER_SIZE[LAYER_COUNT - 1]; i++) {
+          minX = Math.min(minX, neurons[i].sx);
+          maxX = Math.max(maxX, neurons[i].sx);
+        }
+        wrap.dataset.captions = captionBoxes.join(",");
+        wrap.dataset.netWidth = String(Math.round(maxX - minX));
       }
 
       // Dissolve the canvas edges. destination-out erases by alpha, so the
@@ -657,7 +708,7 @@ function NeuralNet() {
       if (halo) {
         ctx.save();
         ctx.translate(ox, oy);
-        ctx.scale(1, (cssH * HALO_RY) / haloR);
+        ctx.scale(1, (cssH * (band ? BAND_HALO : HALO_RY)) / haloR);
         ctx.fillStyle = halo;
         const reach = haloR * 3;
         ctx.fillRect(-reach, -reach, reach * 2, reach * 2);
@@ -680,7 +731,7 @@ function NeuralNet() {
       pointerHost.removeEventListener("pointermove", onMove);
       pointerHost.removeEventListener("pointerleave", onLeave);
     };
-  }, []);
+  }, [band]);
 
   return (
     <div className="netviz" ref={wrapRef}>
