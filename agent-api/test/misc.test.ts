@@ -24,6 +24,10 @@ test("system prompt embeds knowledge, rules and canary", () => {
   assert.ok(p.includes(CANARY));
   assert.ok(p.includes("ai-coding-assistent"));
   assert.ok(p.includes("<visitor_message>"));
+  // Live-test regressions: tool-only replies to questions, and "I can't send emails".
+  assert.match(p, /a tool call is never a reply on its own/);
+  assert.match(p, /you CAN pass a message on/);
+  assert.match(p, /Never say you can't send messages/);
   assert.ok(p.length < 40_000);
 });
 

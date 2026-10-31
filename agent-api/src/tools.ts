@@ -73,7 +73,7 @@ export function toolDeclarations(k: Knowledge) {
     {
       name: "send_contact_message",
       description:
-        "Queue a message to the owner from the visitor. ONLY call after the visitor has given their name, a valid email and the message, AND explicitly said to send it. The visitor still has to press a confirm button before anything is sent.",
+        "Queue a message to the owner from the visitor. Call it once the visitor wants a message passed on and has given their name, a valid email and the message (ask for any that are missing; never invent them). This only creates a draft: the visitor reviews it and presses a confirm button before anything is sent.",
       parameters: {
         type: "object",
         properties: {
