@@ -184,6 +184,30 @@
   ],
   "projects": [
     {
+      "id": "AgentsLab",
+      "title": "AGENTLAB",
+      "category": "agents",
+      "year": "2026",
+      "flagship": true,
+      "blurb": "A local platform for running tool-using agents safely, attacking them with prompt injection, and debugging their runs step by step.",
+      "stack": [
+        "Python",
+        "MCP",
+        "LangGraph",
+        "Ollama",
+        "FastAPI",
+        "React"
+      ],
+      "highlights": [
+        "MCP Gateway: one endpoint for any client, with default-deny policies, human approvals, snapshots + rollback and an audit log",
+        "Arena: 12 prompt-injection attacks across 3 fake scenarios, scored against pluggable defenses in a matrix runner",
+        "Recorder: every run as a timeline — replay with recorded tool results, fork, diff two runs, golden regression suites",
+        "CLI bridge turns installed tools (git, gh, docker) into MCP tools from YAML manifests, with argument-injection guards",
+        "Admin UI with live approvals, audit, policy simulator and run waterfall; 128 tests"
+      ],
+      "url": "https://github.com/saivardhan4694/AgentsLab"
+    },
+    {
       "id": "ai-coding-assistent",
       "title": "AI CODING ASSISTANT",
       "category": "agents",
@@ -667,5 +691,5 @@
       }
     ]
   },
-  "hash": "b71b7ed36b031772"
+  "hash": "0bf56af38ab3422f"
 }
