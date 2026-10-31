@@ -3,11 +3,16 @@
 // `>_ ask` trigger or the "/" hotkey, streams answers from the Worker, and
 // executes the tool calls it returns against the live scene.
 //
+// In the linear (phone/tablet) layout the same terminal becomes a
+// full-width bottom sheet with a scroll lock; when a tool moves the page it
+// drops to a "peek" strip so the visitor sees where it went.
+//
 // Renders nothing at all unless VITE_AGENT_API_URL is set at build time, so
 // the site can ship this code before the Worker exists.
 
 import { useCallback, useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import "../../styles/agent.css";
+import { useLayoutMode } from "../../lib/layoutMode";
 import AgentText from "./AgentText";
 import { runTool } from "./actions";
 import {
@@ -67,6 +72,10 @@ const HELP_TEXT =
 
 const deadline = (sec: number) => Date.now() + sec * 1000;
 
+// Tools that move the page; on the bottom sheet they trigger the peek state.
+const NAV_TOOLS = new Set(["navigate_to", "filter_projects", "open_project", "get_contact"]);
+const LOCK_CLASS = "agent-lock";
+
 function readDebugPref(): boolean {
   try {
     return localStorage.getItem("agent-debug") === "1";
@@ -92,6 +101,10 @@ function AgentTerminalInner() {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [debug, setDebug] = useState(readDebugPref);
+  // Linear layout: bottom sheet. "peek" = shrunk to a strip so the page shows.
+  const sheet = useLayoutMode() === "linear";
+  const [peekState, setPeek] = useState(false);
+  const peek = sheet && peekState;
 
   const nextId = useRef(1);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -99,16 +112,65 @@ function AgentTerminalInner() {
   const logRef = useRef<HTMLDivElement>(null);
   const turnstileRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const panelRef = useRef<HTMLElement>(null);
   const wasOpen = useRef(false);
+  const sheetRef = useRef(sheet);
+  useEffect(() => {
+    sheetRef.current = sheet;
+  }, [sheet]);
 
   const userTurns = entries.filter((e) => e.kind === "user").length;
 
   // Focus moves into the prompt on open and back to the trigger on close.
+  // On the sheet it goes to the panel instead, so the on-screen keyboard
+  // doesn't jump up over the suggestions before the visitor taps the field.
   useEffect(() => {
-    if (open) inputRef.current?.focus();
-    else if (wasOpen.current) triggerRef.current?.focus();
+    if (open) {
+      if (sheetRef.current) panelRef.current?.focus({ preventScroll: true });
+      else inputRef.current?.focus();
+    } else if (wasOpen.current) triggerRef.current?.focus({ preventScroll: true });
     wasOpen.current = open;
   }, [open]);
+
+  // Sheet: lock page scroll while fully open (not while peeking).
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle(LOCK_CLASS, sheet && open && !peek);
+    return () => root.classList.remove(LOCK_CLASS);
+  }, [sheet, open, peek]);
+
+  // Marks the page so the linear footer leaves room for the launcher.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle("agent-on", sheet);
+    return () => root.classList.remove("agent-on");
+  }, [sheet]);
+
+  // Sheet + on-screen keyboard: size the sheet to the visual viewport and
+  // lift it above the keyboard, so the input stays visible on browsers that
+  // overlay the keyboard instead of resizing the page (iOS Safari, Android
+  // Chrome's default).
+  useEffect(() => {
+    const vv = window.visualViewport;
+    const el = panelRef.current;
+    if (!sheet || !open || !vv || !el) return;
+    const update = () => {
+      const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      el.style.setProperty("--agent-vvh", `${Math.round(vv.height)}px`);
+      el.style.setProperty("--agent-kb", `${Math.round(kb)}px`);
+      el.classList.toggle("agent-panel--kb", kb > 80);
+    };
+    update();
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+      el.style.removeProperty("--agent-vvh");
+      el.style.removeProperty("--agent-kb");
+      el.classList.remove("agent-panel--kb");
+    };
+  }, [sheet, open]);
 
   // "/" opens from anywhere that isn't a text field; Esc closes.
   useEffect(() => {
@@ -117,6 +179,7 @@ function AgentTerminalInner() {
       const typing = !!t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable);
       if (e.key === "/" && !open && !typing && !e.metaKey && !e.ctrlKey && !e.altKey) {
         e.preventDefault();
+        setPeek(false);
         setOpen(true);
       } else if (e.key === "Escape" && open) {
         setOpen(false);
@@ -133,6 +196,32 @@ function AgentTerminalInner() {
     const el = logRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [entries, open]);
+
+  // Sheet: when the log box shrinks (peek, on-screen keyboard), keep the
+  // newest output in view rather than whatever was at the old top edge.
+  useEffect(() => {
+    const el = logRef.current;
+    if (!sheet || !el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => {
+      el.scrollTop = el.scrollHeight;
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [sheet]);
+
+  const openPanel = () => {
+    setPeek(false);
+    setOpen(true);
+  };
+
+  // Sheet only: shrink to the peek strip before the page moves, dropping the
+  // keyboard and the scroll lock so the destination is actually visible.
+  const minimise = () => {
+    if (!sheetRef.current) return;
+    document.documentElement.classList.remove(LOCK_CLASS);
+    if (document.activeElement === inputRef.current) inputRef.current?.blur();
+    setPeek(true);
+  };
 
   const push = useCallback((e: NewEntry) => {
     const id = nextId.current++;
@@ -207,6 +296,7 @@ function AgentTerminalInner() {
           patchAgent(agentId, () => ({ text: ev.data.text }));
           break;
         case "tool": {
+          if (NAV_TOOLS.has(ev.data.name)) minimise();
           const result = runTool(ev.data.name, ev.data.args ?? {});
           patchAgent(agentId, (e) => ({ tools: [...e.tools, { name: ev.data.name, args: ev.data.args ?? {}, result }] }));
           break;
@@ -252,7 +342,8 @@ function AgentTerminalInner() {
       setEntries((list) => list.filter((e) => !(e.id === agentId && e.kind === "agent" && !e.text && !e.tools.length)));
       setBusy(false);
       if (abortRef.current === ctrl) abortRef.current = null;
-      inputRef.current?.focus();
+      // On touch screens re-focusing would pop the keyboard over the reply.
+      if (!sheetRef.current) inputRef.current?.focus();
     }
   };
 
@@ -291,8 +382,8 @@ function AgentTerminalInner() {
       <button
         ref={triggerRef}
         type="button"
-        className={open ? "agent-trigger agent-trigger--hidden" : "agent-trigger"}
-        onClick={() => setOpen(true)}
+        className={`agent-trigger${sheet ? " agent-sheet" : ""}${open ? " agent-trigger--hidden" : ""}`}
+        onClick={openPanel}
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls="agent-panel"
@@ -303,9 +394,19 @@ function AgentTerminalInner() {
         <kbd className="agent-kbd">/</kbd>
       </button>
 
+      {sheet && (
+        <div
+          className={open && !peek ? "agent-backdrop agent-backdrop--on" : "agent-backdrop"}
+          onClick={() => setOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       <section
         id="agent-panel"
-        className={open ? "agent-panel agent-panel--open" : "agent-panel"}
+        ref={panelRef}
+        tabIndex={-1}
+        className={`agent-panel${sheet ? " agent-sheet" : ""}${open ? " agent-panel--open" : ""}${peek ? " agent-panel--peek" : ""}`}
         role="dialog"
         aria-modal="false"
         aria-label="Ask the portfolio assistant"
@@ -315,7 +416,7 @@ function AgentTerminalInner() {
       >
         <div className="agent-scan" aria-hidden="true" />
         <header className="agent-head">
-          <span>
+          <span className="agent-head-title">
             <span className="accent">agent</span>@portfolio_os <span className="agent-dim">tty2</span>
           </span>
           <span className="agent-head-actions">
@@ -331,6 +432,17 @@ function AgentTerminalInner() {
             <button type="button" className="agent-chip" onClick={() => void send("clear")} disabled={busy}>
               clear
             </button>
+            {sheet && (
+              <button
+                type="button"
+                className="agent-chip agent-toggle"
+                onClick={() => (peek ? setPeek(false) : minimise())}
+                aria-label={peek ? "Expand assistant" : "Minimise assistant"}
+                aria-expanded={!peek}
+              >
+                {peek ? "▴" : "▾"}
+              </button>
+            )}
             <button type="button" className="agent-close" onClick={() => setOpen(false)} aria-label="Close assistant (Esc)">
               ×
             </button>
@@ -370,7 +482,7 @@ function AgentTerminalInner() {
                         </div>
                       ))}
                     <div className="agent-out">
-                      <AgentText text={e.text} />
+                      <AgentText text={e.text} onFollow={minimise} />
                       {e.streaming && <span className="cursor" aria-hidden="true" />}
                     </div>
                   </div>
@@ -436,6 +548,7 @@ function AgentTerminalInner() {
             className="agent-input"
             value={input}
             onChange={(e) => setInput(e.target.value.slice(0, MAX_INPUT))}
+            onFocus={() => setPeek(false)}
             maxLength={MAX_INPUT}
             placeholder={busy ? "thinking…" : "ask about projects, stack, contact…"}
             autoComplete="off"

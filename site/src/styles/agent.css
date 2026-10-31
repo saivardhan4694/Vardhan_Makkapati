@@ -320,39 +320,176 @@
   padding: 0 12px 10px;
 }
 
-@media (max-width: 640px) {
-  .agent-trigger {
-    left: 12px;
-    bottom: 44px;
-  }
+/* ---------------------------------------------------------------- */
+/* Linear layout (phones/tablets): full-width bottom sheet.          */
+/* Only applies with the .agent-sheet class, which AgentTerminal sets */
+/* in the linear layout; the desktop camera layout never gets it.     */
+/* ---------------------------------------------------------------- */
 
-  .agent-panel {
-    left: 8px;
-    right: 8px;
-    bottom: 40px;
-    width: auto;
-    height: min(70vh, calc(100dvh - 120px));
-    font-size: 12.5px;
-  }
+.agent-trigger.agent-sheet {
+  left: auto;
+  right: max(12px, env(safe-area-inset-right, 0px));
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  min-height: 44px;
+  padding: 0 16px;
+  font-size: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+}
 
-  /* 16px stops iOS Safari from zooming the page when the field is focused. */
-  .agent-input {
-    font-size: 16px;
-  }
+.agent-trigger.agent-sheet .agent-kbd {
+  display: none;
+}
 
-  .agent-head {
-    padding: 8px 10px;
-    white-space: nowrap;
-  }
+/* The linear footer's "cd ~" button would otherwise sit under the launcher. */
+html.agent-on .m-footer {
+  padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+}
 
-  .agent-head .agent-dim {
-    display: none;
-  }
+html.agent-lock,
+html.agent-lock body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+.agent-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  background: rgba(4, 6, 10, 0.66);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms ease;
+}
+
+.agent-backdrop--on {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* --agent-vvh / --agent-kb come from visualViewport (AgentTerminal), so the
+   sheet shrinks and rides above an on-screen keyboard; dvh is the fallback. */
+.agent-panel.agent-sheet {
+  left: 0;
+  right: 0;
+  bottom: var(--agent-kb, 0px);
+  width: auto;
+  height: min(calc(var(--agent-vvh, 100dvh) - 56px - env(safe-area-inset-top, 0px)), 760px);
+  padding: 0 env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+  font-size: 14px;
+  border-width: 1px 0 0;
+  box-shadow: 0 -18px 60px rgba(0, 0, 0, 0.6), 0 -1px 0 rgba(199, 255, 47, 0.08);
+  transform: translateY(32px);
+  transition: opacity 200ms ease, transform 200ms ease, height 200ms ease, visibility 0s linear 200ms;
+}
+
+.agent-panel.agent-sheet.agent-panel--open {
+  transform: none;
+  transition: opacity 200ms ease, transform 200ms ease, height 200ms ease;
+}
+
+.agent-panel.agent-sheet.agent-panel--kb {
+  padding-bottom: 0;
+}
+
+.agent-panel.agent-sheet:focus {
+  outline: none;
+}
+
+/* Peek: a short strip with the latest output + prompt, page usable above. */
+.agent-panel.agent-sheet.agent-panel--peek {
+  height: max(180px, min(calc(var(--agent-vvh, 100dvh) * 0.4), 300px));
+}
+
+.agent-sheet .agent-head {
+  min-height: 52px;
+  padding: 0 4px 0 max(14px, env(safe-area-inset-left, 0px));
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.agent-sheet .agent-head-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.agent-sheet .agent-head .agent-dim {
+  display: none;
+}
+
+.agent-sheet .agent-head-actions {
+  flex: none;
+  gap: 4px;
+}
+
+.agent-sheet .agent-chip {
+  min-height: 44px;
+  padding: 0 10px;
+  font-size: 11px;
+}
+
+.agent-sheet .agent-toggle {
+  min-width: 44px;
+  font-size: 14px;
+  color: var(--text-dim);
+}
+
+.agent-sheet .agent-close {
+  min-width: 44px;
+  min-height: 44px;
+  font-size: 22px;
+  padding: 0;
+}
+
+.agent-sheet .agent-log {
+  padding: 14px 16px;
+}
+
+.agent-sheet .agent-tool {
+  font-size: 12px;
+}
+
+.agent-sheet .agent-suggest {
+  align-items: stretch;
+}
+
+.agent-sheet .agent-suggest-btn {
+  min-height: 44px;
+  padding: 8px 12px;
+}
+
+.agent-sheet .agent-contact-actions {
+  flex-wrap: wrap;
+}
+
+.agent-sheet .agent-contact-actions .agent-chip {
+  font-size: 12px;
+  padding: 0 14px;
+}
+
+.agent-sheet .agent-form {
+  min-height: 56px;
+  padding: 6px 6px 6px 16px;
+}
+
+/* 16px stops iOS Safari from zooming the page when the field is focused. */
+.agent-sheet .agent-input {
+  min-height: 44px;
+  font-size: 16px;
+}
+
+.agent-sheet .agent-send {
+  min-width: 44px;
+  min-height: 44px;
+  font-size: 16px;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .agent-panel,
   .agent-panel--open,
+  .agent-panel.agent-sheet,
+  .agent-panel.agent-sheet.agent-panel--open,
+  .agent-backdrop,
   .agent-line {
     transition: none;
     animation: none;

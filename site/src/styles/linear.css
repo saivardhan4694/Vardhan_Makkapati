@@ -508,6 +508,8 @@
 
 .m-repo {
   border-top: 1px solid var(--border);
+  /* A builds-cmd "open" scrolls the repo here: just below the sticky bar. */
+  scroll-margin-top: calc(var(--m-bar-h) + env(safe-area-inset-top, 0px) + 8px);
 }
 
 .m-repo:first-child {

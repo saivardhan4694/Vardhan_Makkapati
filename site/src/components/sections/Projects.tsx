@@ -220,11 +220,49 @@ function ProjectsBrowser() {
 function ProjectsLinear() {
   const [filter, setFilter] = useState<Filter>("all");
   const [openId, setOpenId] = useState<string | null>(PROJECTS.find((p) => p.flagship)?.id ?? null);
+  // Bumped by an "open" command; the effect below scrolls once it has rendered.
+  const [scrollReq, setScrollReq] = useState<{ id: string } | null>(null);
+  const listRef = useRef<HTMLUListElement>(null);
 
   const visible = useMemo(
     () => (filter === "all" ? PROJECTS : PROJECTS.filter((p) => p.category === filter)),
     [filter]
   );
+
+  // Same "builds-cmd" contract as ProjectsBrowser (the portfolio agent's
+  // filter/open tools), mapped onto the accordion: filter the list, expand
+  // the repo and scroll it to just below the sticky bar.
+  useEffect(() => {
+    const onCmd = (e: Event) => {
+      const cmd = (e as CustomEvent<BuildsCommand>).detail ?? {};
+      const target = cmd.open ? PROJECTS.find((p) => p.id === cmd.open) : undefined;
+      const validFilter = CATEGORIES.some((c) => c.id === cmd.filter) ? (cmd.filter as Filter) : undefined;
+      if (target) {
+        // Opening a repo outside the current filter widens to its category.
+        const fits = (f: Filter) => f === "all" || f === target.category;
+        setFilter((f) => (validFilter && fits(validFilter) ? validFilter : fits(f) ? f : target.category));
+        setOpenId(target.id);
+        setScrollReq({ id: target.id });
+      } else if (validFilter) {
+        setFilter(validFilter);
+      }
+    };
+    window.addEventListener("builds-cmd", onCmd);
+    return () => window.removeEventListener("builds-cmd", onCmd);
+  }, []);
+
+  // Runs after the expanded row has rendered. The caller's goToNode
+  // ("projects") smooth scroll is already under way; this one replaces it.
+  useEffect(() => {
+    if (!scrollReq) return;
+    const row = listRef.current?.querySelector<HTMLElement>(`[data-repo="${scrollReq.id}"]`);
+    if (!row) return;
+    const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const raf = requestAnimationFrame(() =>
+      row.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "start" })
+    );
+    return () => cancelAnimationFrame(raf);
+  }, [scrollReq]);
 
   return (
     <div className="panel panel--projects">
@@ -259,11 +297,11 @@ function ProjectsLinear() {
           <span className="term-path">:~/builds$</span> ls {filter === "all" ? "" : filter + "/"}
         </div>
 
-        <ul className="m-repos">
+        <ul className="m-repos" ref={listRef}>
           {visible.map((p) => {
             const open = p.id === openId;
             return (
-              <li key={p.id} className={open ? "m-repo m-repo--open" : "m-repo"}>
+              <li key={p.id} data-repo={p.id} className={open ? "m-repo m-repo--open" : "m-repo"}>
                 <button
                   type="button"
                   className="m-repo-row"

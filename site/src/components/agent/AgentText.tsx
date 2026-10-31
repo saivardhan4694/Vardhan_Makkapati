@@ -19,7 +19,8 @@ function isAllowedUrl(u: string) {
   return LINK_PREFIXES.some((p) => u === p || u.startsWith(p.endsWith("/") ? p : p + "/") || u.startsWith(p + "?"));
 }
 
-export default function AgentText({ text }: { text: string }) {
+/** `onFollow` runs before a citation navigates (the mobile sheet minimises). */
+export default function AgentText({ text, onFollow }: { text: string; onFollow?: () => void }) {
   const out: ReactNode[] = [];
   let last = 0;
   let k = 0;
@@ -34,7 +35,10 @@ export default function AgentText({ text }: { text: string }) {
             key={k++}
             type="button"
             className="agent-cite"
-            onClick={() => followCitation(c)}
+            onClick={() => {
+              onFollow?.();
+              followCitation(c);
+            }}
             aria-label={`Go to ${c.label}${c.projectId ? ` / ${c.projectId}` : ""}`}
           >
             [→ {c.label}

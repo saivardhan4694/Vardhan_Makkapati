@@ -43,7 +43,7 @@ site data. `npm run deploy` regenerates it first, so a deploy always uses what t
 
 | Tool | Executed by | Validation |
 | --- | --- | --- |
-| `navigate_to(section)` | browser (camera jump) | section id or on-screen label from knowledge |
+| `navigate_to(section)` | browser (camera jump, or scroll on the linear layout) | section id or on-screen label from knowledge |
 | `filter_projects(category)` | browser (BUILDS filter) | `all` or a known category |
 | `open_project(id)` | browser (BUILDS selection) | exact repo id from knowledge |
 | `get_contact()` | browser (jump to PING) + server prints the channels | no args |
@@ -167,6 +167,21 @@ VITE_AGENT_API_URL=http://127.0.0.1:8787 npm run dev     # open http://localhost
 Mock trigger words: "agent/project" (filter tool + citations), "stack" (navigate), "contact/email"
 (get_contact), "send ... @" (contact draft), "weather" (refusal), "system prompt" (injection refusal),
 "leak-test" (tripwire), "bad tool" (rejected tools), "fail-test" (upstream fallback).
+
+### Phones and tablets
+
+On the site's linear layout (phones, tablets, small windows) the terminal is a full-width bottom
+sheet. It sizes itself with `dvh` and `visualViewport`, so the prompt stays above the on-screen keyboard.
+It respects the safe-area insets and locks page scroll while open. The launcher sits bottom-right.
+Tools run through the same `nav-node` / `builds-cmd` events in both layouts. The BUILDS accordion
+filters and expands the repo, then scrolls it into view. When a tool or citation moves the page, the
+sheet shrinks to a "peek" strip so the visitor can see the result. Tap ▴ or the prompt to expand it
+again. The desktop camera panel is unchanged.
+
+`site/scripts/agent-check.mjs` (`npm run test:agent` in `site/`) is an opt-in Playwright check of
+the panel at 4 mobile sizes and 1440x900. It needs this mock worker running with raised limits and a
+site build that has `VITE_AGENT_API_URL` set. See the header of that file. CI does not run it. It
+uses Chromium emulation, so the real iOS Safari keyboard still needs a check on a device.
 
 ## Tests and evals
 
