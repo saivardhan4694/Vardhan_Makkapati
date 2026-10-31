@@ -1,7 +1,7 @@
 import { memo, useState } from "react";
 import { goToNode } from "../../lib/navNode";
 import { PROJECTS as ALL_PROJECTS } from "../../data/projects";
-import { ABOUT_PARAGRAPHS, ABOUT_STATUS as STATUS_ITEMS, EXPERIENCE } from "../../data/profile";
+import { ABOUT_PARAGRAPHS, ABOUT_STATUS as STATUS_ITEMS, EXPERIENCE, TIMELINE } from "../../data/profile";
 
 const SKILL_GROUPS = [
   {
@@ -35,12 +35,16 @@ const PROJECTS = DIGEST_IDS.map((id) => {
   return { name: p.title, tags: p.stack.slice(0, 2), note: p.blurb };
 });
 
+// Degree facts come from the TRAINING timeline so the two sections can't disagree.
+const DEGREE = TIMELINE[0];
+
 const EDUCATION = {
-  degree: "B.TECH — [YOUR_BRANCH]",
-  school: "[YOUR_UNIVERSITY]",
-  period: "20XX — 20XX",
+  degree: `B.TECH — ${DEGREE.title.toUpperCase()}`,
+  school: DEGREE.org,
+  period: DEGREE.score,
   note: "Highest qualification — the systems, maths and programming foundation the AI work is built on.",
-  capstone: "[Final-year project — one line on what you built and the result.]",
+  // One line on the final-year project. The CAPSTONE row stays hidden while this is null.
+  capstone: null as string | null,
   coursework: [
     "Data Structures",
     "Machine Learning",
@@ -302,12 +306,14 @@ function About() {
                 </div>
               </div>
             </div>
-            <div className="screen-row">
-              <div className="screen-row-when">CAPSTONE</div>
-              <div className="screen-row-body">
-                <div className="screen-row-note screen-row-note--flush">{EDUCATION.capstone}</div>
+            {EDUCATION.capstone && (
+              <div className="screen-row">
+                <div className="screen-row-when">CAPSTONE</div>
+                <div className="screen-row-body">
+                  <div className="screen-row-note screen-row-note--flush">{EDUCATION.capstone}</div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
             </div>
