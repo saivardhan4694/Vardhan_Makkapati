@@ -188,6 +188,7 @@ async function handleChat(req: Request, env: Env, cfg: Config, cors: Record<stri
         systemPrompt: privateMode ? PRIVATE_PROMPT : SYSTEM_PROMPT,
         contents,
         tools: privateMode ? [] : TOOLS,
+        relaxHarassment: privateMode,
         maxOutputTokens: cfg.maxOutputTokens + cfg.thinkingHeadroom,
         thinkingLevel: cfg.thinkingLevel,
         timeoutMs: cfg.upstreamTimeoutMs,

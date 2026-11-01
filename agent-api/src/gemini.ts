@@ -24,6 +24,8 @@ export interface GeminiRequest {
   timeoutMs: number;
   /** Abort if no SSE data arrives within this many ms (status -2). */
   firstByteMs?: number;
+  /** Teasing trips the harassment filter at the default level; private mode relaxes that one category. */
+  relaxHarassment?: boolean;
 }
 
 export class UpstreamError extends Error {
@@ -54,7 +56,9 @@ export function buildGeminiBody(r: Omit<GeminiRequest, "apiKey" | "model" | "tim
       ? { tools: [{ functionDeclarations: r.tools }], toolConfig: { functionCallingConfig: { mode: "AUTO" } } }
       : {}),
     generationConfig,
-    safetySettings: SAFETY,
+    safetySettings: r.relaxHarassment
+      ? SAFETY.map((s) => (s.category === "HARM_CATEGORY_HARASSMENT" ? { ...s, threshold: "BLOCK_ONLY_HIGH" } : s))
+      : SAFETY,
   };
 }
 

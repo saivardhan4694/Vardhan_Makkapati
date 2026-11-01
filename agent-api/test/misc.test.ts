@@ -107,3 +107,10 @@ test("privateMode prompt never contains the phrase and bans navigation", async (
   assert.match(p, /no navigation tools/);
   assert.equal(/fellow/i.test(p), false);
 });
+
+test("relaxHarassment only loosens the harassment category", () => {
+  const b = buildGeminiBody({ systemPrompt: "s", contents: [], tools: [], maxOutputTokens: 10, thinkingLevel: null, relaxHarassment: true });
+  const by = Object.fromEntries(b.safetySettings.map((s) => [s.category, s.threshold]));
+  assert.equal(by.HARM_CATEGORY_HARASSMENT, "BLOCK_ONLY_HIGH");
+  assert.equal(by.HARM_CATEGORY_HATE_SPEECH, "BLOCK_MEDIUM_AND_ABOVE");
+});
