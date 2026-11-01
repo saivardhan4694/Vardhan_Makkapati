@@ -50,7 +50,6 @@ export const PROJECTS: Project[] = [
     ],
     url: `${GH}/AgentsLab`,
     year: "2026",
-    flagship: true,
   },
   {
     id: "ai-coding-assistent",

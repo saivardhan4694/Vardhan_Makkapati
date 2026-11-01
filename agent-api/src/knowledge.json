@@ -188,7 +188,7 @@
       "title": "AGENTLAB",
       "category": "agents",
       "year": "2026",
-      "flagship": true,
+      "flagship": false,
       "blurb": "A local platform for running tool-using agents safely, attacking them with prompt injection, and debugging their runs step by step.",
       "stack": [
         "Python",
@@ -691,5 +691,5 @@
       }
     ]
   },
-  "hash": "0bf56af38ab3422f"
+  "hash": "ed253de43e25ac00"
 }
