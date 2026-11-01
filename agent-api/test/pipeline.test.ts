@@ -152,3 +152,9 @@ test("toolsAllowed:false rejects every tool call and still shows model text", as
   assert.deepEqual(summary.rejected, ["navigate_to:disabled"]);
   assert.match(out.map((e) => (e.event === "text" ? e.data.delta : "")).join(""), /click it yourself/);
 });
+
+test("a mid-stream safety block after partial text appends a cut-off note", async () => {
+  const r = await run([t("Well"), { type: "finish", reason: "SAFETY" }]);
+  assert.equal(r.summary.outcome, "blocked");
+  assert.match(r.textOnly, /^Well.*cut off/);
+});

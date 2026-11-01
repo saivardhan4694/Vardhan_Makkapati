@@ -155,7 +155,10 @@ export async function runTurn(d: TurnDeps): Promise<TurnSummary> {
     return summary;
   }
 
-  if (!acc.trim() && !anything) {
+  if (summary.outcome === "blocked" && acc.trim()) {
+    // The model filter cut the reply mid-stream: say so instead of leaving a dangling fragment.
+    await d.emit({ event: "text", data: { delta: " … (cut off, ask me again)" } });
+  } else if (!acc.trim() && !anything) {
     if (summary.outcome === "blocked") {
       await d.emit({ event: "text", data: { delta: "I can't help with that one. Ask me about the portfolio instead." } });
     } else if (valid.length) {
