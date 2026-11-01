@@ -34,6 +34,8 @@ export interface TurnDeps {
   knowledge: Knowledge;
   maxOutputChars: number;
   maxToolCalls?: number;
+  /** false = refuse every tool call (used by the private playful mode). */
+  toolsAllowed?: boolean;
   emit: (e: ClientEvent) => void | Promise<void>;
   queueContact: (a: ContactArgs) => Promise<{ ok: true; id: string; expiresInSec: number } | { ok: false; reason: string }>;
 }
@@ -93,6 +95,10 @@ export async function runTurn(d: TurnDeps): Promise<TurnSummary> {
         }
         await flush(false);
       } else if (ev.type === "call") {
+        if (d.toolsAllowed === false) {
+          summary.rejected.push(`${String(ev.name).slice(0, 40)}:disabled`);
+          continue;
+        }
         if (valid.length >= maxCalls) {
           summary.rejected.push(`${String(ev.name).slice(0, 40)}:over_limit`);
           continue;

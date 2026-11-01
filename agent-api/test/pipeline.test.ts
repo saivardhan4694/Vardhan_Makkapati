@@ -134,3 +134,21 @@ test("contact over limit is reported", async () => {
   assert.match(r.text, /limit reached/);
   assert.ok(!r.out.some((e) => e.event === "contact_pending"));
 });
+
+test("toolsAllowed:false rejects every tool call and still shows model text", async () => {
+  const out: ClientEvent[] = [];
+  const summary = await runTurn({
+    events: scripted([t("Go click it yourself. "), call("navigate_to", { section: "BUILDS" }), { type: "finish", reason: "STOP" }]),
+    knowledge,
+    maxOutputChars: 2000,
+    toolsAllowed: false,
+    emit: (e) => {
+      out.push(e);
+    },
+    queueContact: async () => ({ ok: false, reason: "x" }),
+  });
+  assert.equal(out.some((e) => e.event === "tool"), false);
+  assert.deepEqual(summary.tools, []);
+  assert.deepEqual(summary.rejected, ["navigate_to:disabled"]);
+  assert.match(out.map((e) => (e.event === "text" ? e.data.delta : "")).join(""), /click it yourself/);
+});

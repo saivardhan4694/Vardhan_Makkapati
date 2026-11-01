@@ -50,8 +50,9 @@ export function buildGeminiBody(r: Omit<GeminiRequest, "apiKey" | "model" | "tim
   return {
     systemInstruction: { parts: [{ text: r.systemPrompt }] },
     contents: r.contents,
-    tools: [{ functionDeclarations: r.tools }],
-    toolConfig: { functionCallingConfig: { mode: "AUTO" } },
+    ...(r.tools.length
+      ? { tools: [{ functionDeclarations: r.tools }], toolConfig: { functionCallingConfig: { mode: "AUTO" } } }
+      : {}),
     generationConfig,
     safetySettings: SAFETY,
   };

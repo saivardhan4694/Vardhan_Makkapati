@@ -92,3 +92,18 @@ test("contact email is plain text with reply-to and a single-line subject", () =
   assert.deepEqual(e.to, ["to@x"]);
   assert.ok(!("html" in e));
 });
+
+test("gemini body omits tools entirely when none are given", () => {
+  const b = buildGeminiBody({ systemPrompt: "s", contents: [], tools: [], maxOutputTokens: 10, thinkingLevel: null });
+  assert.equal("tools" in b, false);
+  assert.equal("toolConfig" in b, false);
+});
+
+test("privateMode prompt never contains the phrase and bans navigation", async () => {
+  const { buildPrivatePrompt } = await import("../src/prompt.ts");
+  const { knowledge } = await import("./helpers.ts");
+  const p = buildPrivatePrompt(knowledge);
+  assert.match(p, /PRIVATE MODE/);
+  assert.match(p, /no navigation tools/);
+  assert.equal(/fellow/i.test(p), false);
+});

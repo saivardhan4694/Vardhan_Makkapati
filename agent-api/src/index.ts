@@ -11,10 +11,10 @@
 import knowledgeJson from "./knowledge.json";
 import type { Knowledge } from "./knowledge-types.ts";
 import { loadConfig, type Config, type Env } from "./config.ts";
-import { MAX_BODY_BYTES, hashSubject, injectionFlags, validateChatRequest, wrapVisitorText } from "./guard.ts";
+import { MAX_BODY_BYTES, hashSubject, injectionFlags, phraseUnlocked, validateChatRequest, wrapVisitorText } from "./guard.ts";
 import type { Rule } from "./limits.ts";
 import type { Limiter } from "./limiter-do.ts";
-import { buildSystemPrompt, INJECTION_REMINDER } from "./prompt.ts";
+import { buildPrivatePrompt, buildSystemPrompt, INJECTION_REMINDER } from "./prompt.ts";
 import { streamWithFallback, UpstreamError, type Content, type ModelEvent } from "./gemini.ts";
 import { streamMock } from "./mock.ts";
 import { toolDeclarations, type ContactArgs } from "./tools.ts";
@@ -26,6 +26,7 @@ export { Limiter } from "./limiter-do.ts";
 
 const knowledge = knowledgeJson as Knowledge;
 const SYSTEM_PROMPT = buildSystemPrompt(knowledge);
+const PRIVATE_PROMPT = buildPrivatePrompt(knowledge);
 const TOOLS = toolDeclarations(knowledge);
 const PENDING_TTL_SEC = 10 * 60;
 const DAY = 86400;
@@ -134,6 +135,7 @@ async function handleChat(req: Request, env: Env, cfg: Config, cors: Record<stri
     return json({ error: v.error.code, message: v.error.message }, v.error.code === "turn_limit" ? 409 : 400, cors);
   }
   const { req: chat } = v;
+  const privateMode = phraseUnlocked(env.PRIVATE_PHRASE, v.userTexts);
 
   const ip = req.headers.get("cf-connecting-ip");
   if (cfg.turnstileEnabled && !(await verifyTurnstile(env.TURNSTILE_SECRET!, chat.turnstileToken, ip))) {
@@ -183,9 +185,9 @@ async function handleChat(req: Request, env: Env, cfg: Config, cors: Record<stri
     : streamWithFallback({
         apiKey: env.GEMINI_API_KEY!,
         model: cfg.model,
-        systemPrompt: SYSTEM_PROMPT,
+        systemPrompt: privateMode ? PRIVATE_PROMPT : SYSTEM_PROMPT,
         contents,
-        tools: TOOLS,
+        tools: privateMode ? [] : TOOLS,
         maxOutputTokens: cfg.maxOutputTokens + cfg.thinkingHeadroom,
         thinkingLevel: cfg.thinkingLevel,
         timeoutMs: cfg.upstreamTimeoutMs,
@@ -208,6 +210,7 @@ async function handleChat(req: Request, env: Env, cfg: Config, cors: Record<stri
     const summary = await runTurn({
       events: tracked,
       knowledge,
+      toolsAllowed: !privateMode,
       maxOutputChars: cfg.maxOutputTokens * 5,
       emit,
       queueContact: async (a: ContactArgs) => {
@@ -233,6 +236,7 @@ async function handleChat(req: Request, env: Env, cfg: Config, cors: Record<stri
       tools: summary.tools,
       rejectedTools: summary.rejected,
       flags: flags.length,
+      special: privateMode || undefined,
       finish: summary.finish,
       promptTokens: summary.promptTokens,
       outputTokens: summary.outputTokens,
