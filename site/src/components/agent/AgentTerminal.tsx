@@ -275,6 +275,21 @@ function AgentTerminalInner() {
       push({ kind: "system", text: HELP_TEXT });
       return;
     }
+    // "[ y ]" / "[ n ]" look like keys, so answer them locally instead of
+    // sending them to the model (which would just draft the message again).
+    const pendingDraft = [...entries].reverse().find((e) => e.kind === "contact" && e.status === "pending");
+    if (pendingDraft && pendingDraft.kind === "contact") {
+      if (/^(y|yes|yeah|yep|send|send it|confirm|ok|okay)[.!]*$/.test(cmd)) {
+        push({ kind: "user", text });
+        void onConfirm(pendingDraft);
+        return;
+      }
+      if (/^(n|no|nope|cancel|stop)[.!]*$/.test(cmd)) {
+        push({ kind: "user", text });
+        patchContact(pendingDraft.id, { status: "cancelled" });
+        return;
+      }
+    }
     if (userTurns >= MAX_TURNS) {
       push({ kind: "notice", text: "Session turn limit reached. Type `clear` to start a new one." });
       return;
@@ -305,6 +320,10 @@ function AgentTerminalInner() {
           patchAgent(agentId, (e) => ({
             tools: [...e.tools, { name: "send_contact_message", args: { name: ev.data.name }, result: "awaiting confirm" }],
           }));
+          // A new draft replaces any older one still waiting for confirmation.
+          setEntries((list) =>
+            list.map((e) => (e.kind === "contact" && e.status === "pending" ? ({ ...e, status: "cancelled" } as Entry) : e))
+          );
           push({
             kind: "contact",
             draft: {

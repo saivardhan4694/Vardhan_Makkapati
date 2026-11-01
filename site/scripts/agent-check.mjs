@@ -165,6 +165,14 @@ try {
     });
     check(name, draft.length === 2 && draft.every((h) => h >= 44), `contact draft buttons ${draft.map(Math.round)}`);
     check(name, (await page.evaluate(() => document.documentElement.scrollWidth)) <= opts.viewport.width, "no overflow with draft");
+
+    // Typing "y" confirms the pending draft locally: no second draft, buttons gone.
+    await ask(page, "y");
+    const afterY = await page.evaluate(() => ({
+      drafts: document.querySelectorAll(".agent-contact").length,
+      buttons: document.querySelectorAll(".agent-contact-actions button").length,
+    }));
+    check(name, afterY.drafts === 1 && afterY.buttons === 0, `typed "y" confirms, no re-draft (${JSON.stringify(afterY)})`);
     if (SHOTS) await page.screenshot({ path: `${SHOTS}/${name}-6-draft.png` });
 
     // Close: X restores launcher, lock released

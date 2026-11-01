@@ -79,7 +79,7 @@ export function toolDeclarations(k: Knowledge) {
         properties: {
           name: { type: "string", description: "Visitor's name" },
           email: { type: "string", description: "Visitor's reply-to email" },
-          message: { type: "string", description: "The message, in the visitor's words" },
+          message: { type: "string", description: "The visitor's message to the owner, written in the first person as the visitor speaking directly to him (e.g. \"Hi Sai, I have a role I'd like to discuss…\"). Keep every detail they gave and their meaning; only fix typos and grammar. Never turn it into instructions about him (\"Tell him…\")." },
         },
         required: ["name", "email", "message"],
       },
