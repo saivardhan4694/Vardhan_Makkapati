@@ -14,7 +14,7 @@ import { loadConfig, type Config, type Env } from "./config.ts";
 import { MAX_BODY_BYTES, hashSubject, injectionFlags, phraseUnlocked, validateChatRequest, wrapVisitorText } from "./guard.ts";
 import type { Rule } from "./limits.ts";
 import type { Limiter } from "./limiter-do.ts";
-import { buildPrivatePrompt, buildSystemPrompt, INJECTION_REMINDER } from "./prompt.ts";
+import { buildPrivatePrompt, buildSystemPrompt, INJECTION_REMINDER, PRIVATE_REMINDER } from "./prompt.ts";
 import { streamWithFallback, UpstreamError, type Content, type ModelEvent } from "./gemini.ts";
 import { streamMock } from "./mock.ts";
 import { toolDeclarations, type ContactArgs } from "./tools.ts";
@@ -175,7 +175,7 @@ async function handleChat(req: Request, env: Env, cfg: Config, cors: Record<stri
     })),
     {
       role: "user" as const,
-      parts: [{ text: wrapVisitorText(chat.message) + (flags.length ? `\n${INJECTION_REMINDER}` : "") }],
+      parts: [{ text: wrapVisitorText(chat.message) + (flags.length ? `\n${INJECTION_REMINDER}` : "") + (privateMode ? `\n${PRIVATE_REMINDER}` : "") }],
     },
   ];
 
