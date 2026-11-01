@@ -129,3 +129,25 @@ test("config falls back to safe defaults on garbage values", () => {
   assert.equal(loadConfig({ AGENT_ENABLED: "0", LIMITER: {} as never }).enabled, false);
   assert.equal(loadConfig({ THINKING_LEVEL: "off", LIMITER: {} as never }).thinkingLevel, null);
 });
+
+test("phraseUnlocked matches the secret phrase loosely and only when set", async () => {
+  const { phraseUnlocked } = await import("../src/guard.ts");
+  assert.equal(phraseUnlocked("secret words", ["hi, I am SECRET   words!!"]), true);
+  assert.equal(phraseUnlocked("secret words", ["no", "tell me about secret words please"]), true);
+  assert.equal(phraseUnlocked("secret words", ["secretwords"]), false);
+  assert.equal(phraseUnlocked("secret words", ["what has he built"]), false);
+  assert.equal(phraseUnlocked(undefined, ["secret words"]), false);
+  assert.equal(phraseUnlocked("", ["anything"]), false);
+  assert.equal(phraseUnlocked("ab", ["ab"]), false);
+});
+
+test("validateChatRequest exposes every user turn even past the history window", () => {
+  const history = Array.from({ length: 8 }, (_, i) => ({ role: i % 2 ? "model" : "user", text: `t${i}` }));
+  const r = validateChatRequest({ message: "now", history }, cfg);
+  assert.ok(r.ok);
+  if (r.ok) {
+    assert.equal(r.userTexts.length, 5);
+    assert.ok(r.userTexts.includes("t0"));
+    assert.ok(r.req.history.length <= cfg.historyWindow);
+  }
+});

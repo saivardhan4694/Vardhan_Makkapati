@@ -10,6 +10,7 @@ export interface Env {
   RESEND_API_KEY?: string;
   TURNSTILE_SECRET?: string;
   IP_HASH_SALT?: string;
+  PRIVATE_PHRASE?: string;
 
   // Vars
   GEMINI_MODEL?: string;

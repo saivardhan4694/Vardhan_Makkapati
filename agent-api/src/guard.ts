@@ -38,7 +38,7 @@ export function cleanText(s: string): string {
 export function validateChatRequest(
   body: unknown,
   cfg: Pick<Config, "maxInputChars" | "maxTurns" | "historyWindow">
-): { ok: true; req: ChatRequest; userTurns: number } | { ok: false; error: ValidationError } {
+): { ok: true; req: ChatRequest; userTurns: number; userTexts: string[] } | { ok: false; error: ValidationError } {
   if (!body || typeof body !== "object" || Array.isArray(body)) {
     return { ok: false, error: { code: "bad_request", message: "Expected a JSON object." } };
   }
@@ -56,6 +56,9 @@ export function validateChatRequest(
   if (message.length > cfg.maxInputChars) return { ok: false, error: tooLong(cfg.maxInputChars) };
 
   let history: HistoryItem[] = [];
+  // Every user turn, before the history window cuts it down. Used to keep a
+  // phrase-unlocked mode alive for the whole session.
+  const userTexts: string[] = [message];
   if (b.history !== undefined) {
     if (!Array.isArray(b.history)) {
       return { ok: false, error: { code: "bad_request", message: "`history` must be an array." } };
@@ -74,6 +77,7 @@ export function validateChatRequest(
       const limit = role === "user" ? cfg.maxInputChars : MAX_MODEL_TURN_CHARS;
       const t = cleanText(text).slice(0, limit);
       if (t) history.push({ role, text: t });
+      if (t && role === "user") userTexts.push(t);
     }
   }
 
@@ -86,7 +90,7 @@ export function validateChatRequest(
   while (history.length && history[0].role !== "user") history.shift();
 
   const token = typeof b.turnstileToken === "string" ? b.turnstileToken.slice(0, 2048) : undefined;
-  return { ok: true, req: { message, history, turnstileToken: token }, userTurns };
+  return { ok: true, req: { message, history, turnstileToken: token }, userTurns, userTexts };
 }
 
 const tooLong = (n: number): ValidationError => ({
@@ -138,6 +142,19 @@ export function leaksPrompt(output: string, canary: string, markers: string[]): 
   if (output.includes(canary)) return true;
   const lower = output.toLowerCase();
   return markers.some((m) => lower.includes(m.toLowerCase()));
+}
+
+const squash = (s: string) => s.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+
+/**
+ * True when the secret phrase appears in any user turn. The phrase comes from
+ * a Worker secret (the repo is public), so it is never in source. Matching
+ * ignores case, punctuation and spacing.
+ */
+export function phraseUnlocked(phrase: string | undefined, userTexts: string[]): boolean {
+  const p = phrase ? squash(phrase) : "";
+  if (p.length < 4) return false;
+  return userTexts.some((t) => ` ${squash(t)} `.includes(` ${p} `));
 }
 
 export async function hashSubject(ip: string, salt: string): Promise<string> {

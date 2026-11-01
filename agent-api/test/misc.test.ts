@@ -92,3 +92,25 @@ test("contact email is plain text with reply-to and a single-line subject", () =
   assert.deepEqual(e.to, ["to@x"]);
   assert.ok(!("html" in e));
 });
+
+test("gemini body omits tools entirely when none are given", () => {
+  const b = buildGeminiBody({ systemPrompt: "s", contents: [], tools: [], maxOutputTokens: 10, thinkingLevel: null });
+  assert.equal("tools" in b, false);
+  assert.equal("toolConfig" in b, false);
+});
+
+test("privateMode prompt never contains the phrase and bans navigation", async () => {
+  const { buildPrivatePrompt } = await import("../src/prompt.ts");
+  const { knowledge } = await import("./helpers.ts");
+  const p = buildPrivatePrompt(knowledge);
+  assert.match(p, /PRIVATE MODE/);
+  assert.match(p, /no navigation tools/);
+  assert.equal(/fellow/i.test(p), false);
+});
+
+test("relaxHarassment only loosens the harassment category", () => {
+  const b = buildGeminiBody({ systemPrompt: "s", contents: [], tools: [], maxOutputTokens: 10, thinkingLevel: null, relaxHarassment: true });
+  const by = Object.fromEntries(b.safetySettings.map((s) => [s.category, s.threshold]));
+  assert.equal(by.HARM_CATEGORY_HARASSMENT, "BLOCK_ONLY_HIGH");
+  assert.equal(by.HARM_CATEGORY_HATE_SPEECH, "BLOCK_MEDIUM_AND_ABOVE");
+});
